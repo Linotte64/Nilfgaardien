@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traducteur de Langue Construite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .translator-section {
+            padding: 40px;
+        }
+
+        .language-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+
+        .lang-option {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 15px 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .lang-option.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .swap-btn {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            color: white;
+            font-size: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .swap-btn:hover {
+            transform: rotate(180deg);
+        }
+
+        .translation-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .input-section {
+            position: relative;
+        }
+
+        .input-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px;
+            font-size: 16px;
+            resize: none;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .translate-btn {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .translate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .analysis {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .analysis h4 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .word-analysis {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .word-tag {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        .dictionary {
+            background: #fff;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            border: 1px solid #e9ecef;
+        }
+
+        .dictionary h3 {
+            color: #495057;
+            margin-bottom: 15px;
+        }
+
+        .dict-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .dict-entry:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✨ Traducteur de Langue Construite ✨</h1>
+            <p>Prototype de traduction intelligente avec analyse grammaticale</p>
+        </div>
+
+        <div class="translator-section">
+            <div class="language-selector">
+                <div class="lang-option active" data-lang="conlang">Votre Langue</div>
+                <button class="swap-btn" onclick="swapLanguages()">⇄</button>
+                <div class="lang-option" data-lang="french">Français</div>
+            </div>
+
+            <div class="translation-area">
+                <div class="input-section">
+                    <h3 id="input-label">Votre Langue</h3>
+                    <textarea id="input-text" placeholder="Saisissez votre texte ici...">Skel gorval drae'skorr grurnir osk kravnyar nork</textarea>
+                </div>
+                <div class="input-section">
+                    <h3 id="output-label">Français</h3>
+                    <textarea id="output-text" placeholder="La traduction apparaîtra ici..." readonly></textarea>
+                </div>
+            </div>
+
+            <button class="translate-btn" onclick="translate()">🔄 Traduire</button>
+
+            <div class="analysis" id="analysis" style="display: none;">
+                <h4>📋 Analyse Grammaticale</h4>
+                <div id="word-analysis" class="word-analysis"></div>
+                <div id="grammar-notes"></div>
+            </div>
+
+            <div class="dictionary">
+                <h3>📚 Dictionnaire</h3>
+                <div id="dictionary-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Base de données linguistique
+        const lexicon = {
+            'skel': { fr: 'la', type: 'article', gender: 'f' },
+            'gorval': { fr: 'bête', type: 'nom', gender: 'f' },
+            'drae\'skorr': { fr: 'sauvage', type: 'adjectif' },
+            'grurnir': { fr: 'grogner', type: 'verbe', infinitive: 'grurnir' },
+            'osk': { fr: 'mais', type: 'conjonction' },
+            'kravnyar': { fr: 'mordre', type: 'verbe', infinitive: 'kravnyar' },
+            'nork': { fr: 'ne...pas', type: 'négation' }
+        };
+
+        // Règles grammaticales
+        const grammarRules = {
+            negation: {
+                pattern: /nork$/,
+                transform: (sentence) => sentence.replace(/nork$/, '').trim() + ' ne...pas'
+            },
+            verbConjugation: {
+                person3sing: (verb) => verb // 3e personne = infinitif
+            }
+        };
+
+        let currentDirection = 'conlang-to-french'; // ou 'french-to-conlang'
+
+        function swapLanguages() {
+            const inputLabel = document.getElementById('input-label');
+            const outputLabel = document.getElementById('output-label');
+            const inputText = document.getElementById('input-text');
+            const outputText = document.getElementById('output-text');
+            
+            // Échanger les labels
+            const tempLabel = inputLabel.textContent;
+            inputLabel.textContent = outputLabel.textContent;
+            outputLabel.textContent = tempLabel;
+            
+            // Échanger les textes
+            const tempText = inputText.value;
+            inputText.value = outputText.value;
+            outputText.value = tempText;
+            
+            // Changer la direction
+            currentDirection = currentDirection === 'conlang-to-french' ? 'french-to-conlang' : 'conlang-to-french';
+            
+            // Mettre à jour les boutons actifs
+            document.querySelectorAll('.lang-option').forEach(btn => btn.classList.toggle('active'));
+        }
+
+        function translate() {
+            const inputText = document.getElementById('input-text').value.trim().toLowerCase();
+            const outputText = document.getElementById('output-text');
+            const analysis = document.getElementById('analysis');
+            const wordAnalysis = document.getElementById('word-analysis');
+            const grammarNotes = document.getElementById('grammar-notes');
+            
+            if (!inputText) return;
+
+            if (currentDirection === 'conlang-to-french') {
+                const result = translateToFrench(inputText);
+                outputText.value = result.translation;
+                showAnalysis(result.analysis);
+            } else {
+                const result = translateToConlang(inputText);
+                outputText.value = result.translation;
+                showAnalysis(result.analysis);
+            }
+            
+            analysis.style.display = 'block';
+        }
+
+        function translateToFrench(text) {
+            const words = text.split(/\s+/);
+            let translation = [];
+            let analysis = [];
+            let hasNegation = false;
+
+            // Détecter la négation
+            if (words[words.length - 1] === 'nork') {
+                hasNegation = true;
+                words.pop(); // Enlever nork de la liste
+            }
+
+            words.forEach(word => {
+                const entry = lexicon[word];
+                if (entry) {
+                    translation.push(entry.fr);
+                    analysis.push({
+                        original: word,
+                        translation: entry.fr,
+                        type: entry.type
+                    });
+                } else {
+                    translation.push(`[${word}]`);
+                    analysis.push({
+                        original: word,
+                        translation: `[inconnu]`,
+                        type: 'inconnu'
+                    });
+                }
+            });
+
+            // Traitement de la négation
+            if (hasNegation) {
+                // Trouver le verbe principal
+                const verbIndex = analysis.findIndex(item => item.type === 'verbe');
+                if (verbIndex !== -1) {
+                    translation[verbIndex] = 'ne ' + translation[verbIndex] + ' pas';
+                }
+            }
+
+            return {
+                translation: translation.join(' '),
+                analysis: analysis,
+                grammar: hasNegation ? ['Négation détectée'] : []
+            };
+        }
+
+        function translateToConlang(text) {
+            // Version simplifiée pour la traduction inverse
+            const frenchToConlang = {};
+            Object.keys(lexicon).forEach(key => {
+                frenchToConlang[lexicon[key].fr] = key;
+            });
+
+            const words = text.toLowerCase().split(/\s+/);
+            let translation = [];
+            let analysis = [];
+
+            words.forEach(word => {
+                if (frenchToConlang[word]) {
+                    translation.push(frenchToConlang[word]);
+                    analysis.push({
+                        original: word,
+                        translation: frenchToConlang[word],
+                        type: lexicon[frenchToConlang[word]].type
+                    });
+                } else {
+                    translation.push(`[${word}]`);
+                    analysis.push({
+                        original: word,
+                        translation: `[inconnu]`,
+                        type: 'inconnu'
+                    });
+                }
+            });
+
+            return {
+                translation: translation.join(' '),
+                analysis: analysis,
+                grammar: []
+            };
+        }
+
+        function showAnalysis(analysisData) {
+            const wordAnalysis = document.getElementById('word-analysis');
+            const grammarNotes = document.getElementById('grammar-notes');
+            
+            wordAnalysis.innerHTML = '';
+            analysisData.forEach(item => {
+                const tag = document.createElement('div');
+                tag.className = 'word-tag';
+                tag.innerHTML = `<strong>${item.original}</strong> → ${item.translation} <em>(${item.type})</em>`;
+                wordAnalysis.appendChild(tag);
+            });
+
+            grammarNotes.innerHTML = analysisData.grammar ? 
+                analysisData.grammar.map(note => `<div>• ${note}</div>`).join('') : '';
+        }
+
+        // Afficher le dictionnaire au chargement
+        function loadDictionary() {
+            const dictContent = document.getElementById('dictionary-content');
+            Object.keys(lexicon).forEach(word => {
+                const entry = document.createElement('div');
+                entry.className = 'dict-entry';
+                entry.innerHTML = `<strong>${word}</strong> → ${lexicon[word].fr} <em>(${lexicon[word].type})</em>`;
+                dictContent.appendChild(entry);
+            });
+        }
+
+        // Traduction automatique au chargement
+        window.onload = function() {
+            loadDictionary();
+            translate(); // Traduit l'exemple par défaut
+        };
+
+        // Traduction en temps réel (optionnel)
+        document.getElementById('input-text').addEventListener('input', function() {
+            setTimeout(translate, 500); // Délai pour éviter trop de calculs
+        });
+    </script>
+</body>
+</html>
