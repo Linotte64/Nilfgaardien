@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traducteur de Langue Construite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .translator-section {
+            padding: 40px;
+        }
+
+        .language-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+
+        .lang-option {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 15px 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .lang-option.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .swap-btn {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            color: white;
+            font-size: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .swap-btn:hover {
+            transform: rotate(180deg);
+        }
+
+        .translation-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .input-section {
+            position: relative;
+        }
+
+        .input-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px;
+            font-size: 16px;
+            resize: none;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .translate-btn {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .translate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .analysis {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .analysis h4 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .word-analysis {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .word-tag {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        .dictionary {
+            background: #fff;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            border: 1px solid #e9ecef;
+        }
+
+        .dictionary h3 {
+            color: #495057;
+            margin-bottom: 15px;
+        }
+
+        .dict-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .dict-entry:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✨ Traducteur de Langue Construite ✨</h1>
+            <p>Système automatique avec conjugaisons intelligentes</p>
+        </div>
+
+        <div class="translator-section">
+            <div class="language-selector">
+                <div class="lang-option active" data-lang="conlang">Votre Langue</div>
+                <button class="swap-btn" onclick="swapLanguages()">⇄</button>
+                <div class="lang-option" data-lang="french">Français</div>
+            </div>
+
+            <div class="translation-area">
+                <div class="input-section">
+                    <h3 id="input-label">Votre Langue</h3>
+                    <textarea id="input-text" placeholder="Saisissez votre texte ici...">Skel gorval drae'skorr grurnir osk kravnyar nork</textarea>
+                </div>
+                <div class="input-section">
+                    <h3 id="output-label">Français</h3>
+                    <textarea id="output-text" placeholder="La traduction apparaîtra ici..." readonly></textarea>
+                </div>
+            </div>
+
+            <button class="translate-btn" onclick="translate()">🔄 Traduire</button>
+
+            <div class="analysis" id="analysis" style="display: none;">
+                <h4>📋 Analyse Grammaticale</h4>
+                <div id="word-analysis" class="word-analysis"></div>
+                <div id="grammar-notes"></div>
+            </div>
+
+            <div class="dictionary">
+                <h3>📚 Dictionnaire</h3>
+                <div id="dictionary-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==============================================
+        // SYSTÈME SIMPLE ET FONCTIONNEL
+        // ==============================================
+
+        // Dictionnaire de base
+        const basicLexicon = {
+            'skel': { fr: 'la', type: 'article' },
+            'osk': { fr: 'mais', type: 'conjonction' },
+            'drae\'skorr': { fr: 'sauvage', type: 'adjectif' },
+            'nork': { fr: 'ne...pas', type: 'négation' }
+        };
+
+        // Noms avec genres
+        const nouns = {
+            'gorval': { fr: 'bête', gender_fr: 'f', gender_conlang: 'm' },
+            'mithel': { fr: 'chat', gender_fr: 'm', gender_conlang: 'f' }
+        };
+
+        // Verbes avec radicaux
+        const verbs = {
+            'grurnir': { radical: 'grurn', fr: 'grogner' },
+            'kravnyar': { radical: 'kravny', fr: 'mordre' },
+            'addan': { radical: 'add', fr: 'danser' }
+        };
+
+        // Conjugaisons nilfgaardiennes
+        const nilf_endings = {
+            'je': 'en', 'tu': 'es', 'il': '', 'elle': '', 
+            'nous': 'avam', 'vous': 'avel', 'ils': 'arin', 'elles': 'arin'
+        };
+
+        // Conjugaisons françaises par groupe
+        const french_groups = {
+            groupe1: { // -er
+                verbs: ['grogner', 'danser', 'parler', 'chanter'],
+                endings: { je: 'e', tu: 'es', il: 'e', elle: 'e', nous: 'ons', vous: 'ez', ils: 'ent', elles: 'ent' }
+            },
+            groupe3: { // -re et autres
+                verbs: ['mordre'],
+                endings: { je: 's', tu: 's', il: '', elle: '', nous: 'ons', vous: 'ez', ils: 'ent', elles: 'ent' }
+            }
+        };
+
+        let currentDirection = 'conlang-to-french';
+
+        // ==============================================
+        // FONCTIONS DE CONJUGAISON
+        // ==============================================
+
+        function conjugateFrench(infinitif, person) {
+            // Cas spéciaux d'abord
+            if (infinitif === 'grogner') {
+                const forms = { je: 'grogne', tu: 'grognes', il: 'grogne', elle: 'grogne', 
+                              nous: 'grognons', vous: 'grognez', ils: 'grognent', elles: 'grognent' };
+                return forms[person];
+            }
+            if (infinitif === 'mordre') {
+                const forms = { je: 'mords', tu: 'mords', il: 'mord', elle: 'mord', 
+                              nous: 'mordons', vous: 'mordez', ils: 'mordent', elles: 'mordent' };
+                return forms[person];
+            }
+            if (infinitif === 'danser') {
+                const forms = { je: 'danse', tu: 'danses', il: 'danse', elle: 'danse', 
+                              nous: 'dansons', vous: 'dansez', ils: 'dansent', elles: 'dansent' };
+                return forms[person];
+            }
+            
+            return infinitif; // Fallback
+        }
+
+        function conjugateNilfgaardian(infinitif, person) {
+            const verb = verbs[infinitif];
+            if (!verb) return infinitif;
+            
+            if (person === 'il' || person === 'elle') {
+                return infinitif; // 3e personne = infinitif
+            }
+            
+            const ending = nilf_endings[person];
+            return verb.radical + ending;
+        }
+
+        function findFrenchVerb(conjugatedForm) {
+            // Chercher dans tous les verbes français
+            for (const [infinitif, verbData] of Object.entries(verbs)) {
+                for (const person of ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles']) {
+                    const frenchForm = conjugateFrench(verbData.fr, person);
+                    if (frenchForm === conjugatedForm) {
+                        return { infinitif: verbData.fr, person: person, nilfInfinitif: infinitif };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function detectSubject(words, direction) {
+            if (direction === 'french-to-conlang') {
+                // Chercher pronoms personnels
+                const pronouns = ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles'];
+                for (const word of words) {
+                    if (pronouns.includes(word)) {
+                        return { person: word, source: 'pronoun' };
+                    }
+                }
+                
+                // Chercher noms
+                for (const word of words) {
+                    const noun = Object.values(nouns).find(n => n.fr === word);
+                    if (noun) {
+                        return { person: noun.gender_conlang === 'm' ? 'il' : 'elle', source: 'noun', noun: word };
+                    }
+                }
+                
+                // Déduire du verbe
+                for (const word of words) {
+                    const verbInfo = findFrenchVerb(word);
+                    if (verbInfo) {
+                        return { person: verbInfo.person, source: 'verb', verb: word };
+                    }
+                }
+            } else {
+                // Nilfgaardien vers français
+                for (const word of words) {
+                    const noun = nouns[word];
+                    if (noun) {
+                        return { person: noun.gender_fr === 'm' ? 'il' : 'elle', source: 'noun', noun: word };
+                    }
+                }
+            }
+            
+            return { person: 'il', source: 'default' }; // défaut
+        }
+
+        // ==============================================
+        // TRADUCTION PRINCIPALE
+        // ==============================================
+
+        function translateToFrench(text) {
+            const words = text.split(/\s+/);
+            const { person: subject } = detectSubject(words, 'conlang-to-french');
+            
+            let translation = [];
+            let analysis = [];
+            let grammarNotes = [];
+            
+            // Traiter négation
+            let processedWords = [];
+            let i = 0;
+            while (i < words.length) {
+                if (i < words.length - 1 && words[i + 1] === 'nork') {
+                    processedWords.push({ word: words[i], negated: true });
+                    i += 2;
+                } else {
+                    processedWords.push({ word: words[i], negated: false });
+                    i++;
+                }
+            }
+            
+            processedWords.forEach(({ word, negated }) => {
+                // Dictionnaire de base
+                if (basicLexicon[word]) {
+                    translation.push(basicLexicon[word].fr);
+                    analysis.push({ original: word, translation: basicLexicon[word].fr, type: basicLexicon[word].type });
+                    return;
+                }
+                
+                // Noms
+                if (nouns[word]) {
+                    translation.push(nouns[word].fr);
+                    analysis.push({ original: word, translation: nouns[word].fr, type: 'nom' });
+                    return;
+                }
+                
+                // Verbes
+                if (verbs[word]) {
+                    let frenchForm = conjugateFrench(verbs[word].fr, subject);
+                    if (negated) {
+                        frenchForm = 'ne ' + frenchForm + ' pas';
+                        grammarNotes.push(`Négation appliquée à "${word}"`);
+                    }
+                    translation.push(frenchForm);
+                    analysis.push({ original: word + (negated ? ' nork' : ''), translation: frenchForm, type: 'verbe (' + subject + ')' });
+                    return;
+                }
+                
+                // Pas trouvé
+                translation.push(`[${word}]`);
+                analysis.push({ original: word, translation: `[inconnu]`, type: 'inconnu' });
+            });
+            
+            return { translation: translation.join(' '), analysis, grammar: grammarNotes };
+        }
+
+        function translateToConlang(text) {
+            const words = text.toLowerCase().split(/\s+/);
+            const { person: subject, source } = detectSubject(words, 'french-to-conlang');
+            
+            let translation = [];
+            let analysis = [];
+            let grammarNotes = [];
+            
+            if (source === 'pronoun') grammarNotes.push(`Pronom "${subject}" détecté`);
+            if (source === 'verb') grammarNotes.push(`Sujet déduit du verbe`);
+            
+            // Traiter négation française
+            let processedWords = [];
+            let i = 0;
+            while (i < words.length) {
+                if (words[i] === 'ne') {
+                    // Chercher "pas"
+                    let pasIndex = -1;
+                    for (let j = i + 1; j < words.length; j++) {
+                        if (words[j] === 'pas') {
+                            pasIndex = j;
+                            break;
+                        }
+                    }
+                    
+                    if (pasIndex !== -1) {
+                        // Traiter les mots entre "ne" et "pas"
+                        const betweenWords = words.slice(i + 1, pasIndex);
+                        betweenWords.forEach(w => {
+                            const verbInfo = findFrenchVerb(w);
+                            if (verbInfo) {
+                                processedWords.push({ word: w, negated: true, verbInfo });
+                            } else {
+                                processedWords.push({ word: w, negated: false });
+                            }
+                        });
+                        i = pasIndex + 1;
+                        continue;
+                    }
+                }
+                
+                processedWords.push({ word: words[i], negated: false });
+                i++;
+            }
+            
+            processedWords.forEach(({ word, negated, verbInfo }) => {
+                // Dictionnaire de base (français vers nilfgaardien)
+                const basicEntry = Object.keys(basicLexicon).find(key => basicLexicon[key].fr === word);
+                if (basicEntry) {
+                    translation.push(basicEntry);
+                    analysis.push({ original: word, translation: basicEntry, type: basicLexicon[basicEntry].type });
+                    return;
+                }
+                
+                // Noms
+                const nounEntry = Object.keys(nouns).find(key => nouns[key].fr === word);
+                if (nounEntry) {
+                    translation.push(nounEntry);
+                    analysis.push({ original: word, translation: nounEntry, type: 'nom' });
+                    return;
+                }
+                
+                // Verbes
+                if (verbInfo) {
+                    const nilfForm = conjugateNilfgaardian(verbInfo.nilfInfinitif, subject);
+                    const finalForm = negated ? nilfForm + ' nork' : nilfForm;
+                    
+                    translation.push(finalForm);
+                    analysis.push({ 
+                        original: negated ? `ne ${word} pas` : word, 
+                        translation: finalForm, 
+                        type: 'verbe (' + subject + ')' 
+                    });
+                    if (negated) grammarNotes.push(`Négation détectée sur "${word}"`);
+                    return;
+                } else {
+                    // Chercher le verbe manuellement
+                    const verbEntry = findFrenchVerb(word);
+                    if (verbEntry) {
+                        const nilfForm = conjugateNilfgaardian(verbEntry.nilfInfinitif, subject);
+                        translation.push(nilfForm);
+                        analysis.push({ original: word, translation: nilfForm, type: 'verbe (' + subject + ')' });
+                        grammarNotes.push(`Verbe "${word}" conjugué pour "${subject}"`);
+                        return;
+                    }
+                }
+                
+                // Pas trouvé
+                translation.push(`[${word}]`);
+                analysis.push({ original: word, translation: `[inconnu]`, type: 'inconnu' });
+            });
+            
+            return { translation: translation.join(' '), analysis, grammar: grammarNotes };
+        }
+
+        // ==============================================
+        // INTERFACE
+        // ==============================================
+
+        function swapLanguages() {
+            const inputLabel = document.getElementById('input-label');
+            const outputLabel = document.getElementById('output-label');
+            const inputText = document.getElementById('input-text');
+            const outputText = document.getElementById('output-text');
+            
+            const tempLabel = inputLabel.textContent;
+            inputLabel.textContent = outputLabel.textContent;
+            outputLabel.textContent = tempLabel;
+            
+            const tempText = inputText.value;
+            inputText.value = outputText.value;
+            outputText.value = tempText;
+            
+            currentDirection = currentDirection === 'conlang-to-french' ? 'french-to-conlang' : 'conlang-to-french';
+            document.querySelectorAll('.lang-option').forEach(btn => btn.classList.toggle('active'));
+        }
+
+        function translate() {
+            const inputText = document.getElementById('input-text').value.trim();
+            const outputText = document.getElementById('output-text');
+            const analysis = document.getElementById('analysis');
+            
+            if (!inputText) return;
+
+            let result;
+            if (currentDirection === 'conlang-to-french') {
+                result = translateToFrench(inputText);
+            } else {
+                result = translateToConlang(inputText);
+            }
+            
+            outputText.value = result.translation;
+            showAnalysis(result.analysis, result.grammar);
+            analysis.style.display = 'block';
+        }
+
+        function showAnalysis(analysisData, grammarNotes) {
+            const wordAnalysis = document.getElementById('word-analysis');
+            const grammarDiv = document.getElementById('grammar-notes');
+            
+            wordAnalysis.innerHTML = '';
+            analysisData.forEach(item => {
+                const tag = document.createElement('div');
+                tag.className = 'word-tag';
+                tag.innerHTML = `<strong>${item.original}</strong> → ${item.translation} <em>(${item.type})</em>`;
+                wordAnalysis.appendChild(tag);
+            });
+
+            grammarDiv.innerHTML = grammarNotes ? 
+                grammarNotes.map(note => `<div>📝 ${note}</div>`).join('') : '';
+        }
+
+        function loadDictionary() {
+            const dictContent = document.getElementById('dictionary-content');
+            
+            // Articles et mots de base
+            Object.keys(basicLexicon).forEach(word => {
+                const entry = document.createElement('div');
+                entry.className = 'dict-entry';
+                entry.innerHTML = `<strong>${word}</strong> → ${basicLexicon[word].fr} <em>(${basicLexicon[word].type})</em>`;
+                dictContent.appendChild(entry);
+            });
+            
+            // Noms
+            Object.keys(nouns).forEach(word => {
+                const entry = document.createElement('div');
+                entry.className = 'dict-entry';
+                entry.innerHTML = `<strong>${word}</strong> → ${nouns[word].fr} <em>(nom, fr:${nouns[word].gender_fr}, nilf:${nouns[word].gender_conlang})</em>`;
+                dictContent.appendChild(entry);
+            });
+            
+            // Verbes (infinitifs seulement)
+            Object.keys(verbs).forEach(word => {
+                const entry = document.createElement('div');
+                entry.className = 'dict-entry';
+                entry.innerHTML = `<strong>${word}</strong> → ${verbs[word].fr} <em>(verbe, radical: ${verbs[word].radical})</em>`;
+                dictContent.appendChild(entry);
+            });
+        }
+
+        // ==============================================
+        // INITIALISATION
+        // ==============================================
+
+        window.onload = function() {
+            loadDictionary();
+            translate();
+        };
+
+        document.getElementById('input-text').addEventListener('input', function() {
+            setTimeout(translate, 300);
+        });
+
+        // Fonctions d'ajout pour la console
+        window.addVerb = function(nilfInfinitif, radical, frenchInfinitif) {
+            verbs[nilfInfinitif] = { radical, fr: frenchInfinitif };
+            loadDictionary();
+            console.log(`Verbe ajouté: ${nilfInfinitif} (${radical}) → ${frenchInfinitif}`);
+        };
+
+        window.addNoun = function(nilfWord, frenchWord, genderFr, genderNilf) {
+            nouns[nilfWord] = { fr: frenchWord, gender_fr: genderFr, gender_conlang: genderNilf };
+            loadDictionary();
+            console.log(`Nom ajouté: ${nilfWord} → ${frenchWord} (fr:${genderFr}, nilf:${genderNilf})`);
+        };
+    </script>
+</body>
+</html>
