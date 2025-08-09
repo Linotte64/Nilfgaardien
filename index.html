@@ -252,7 +252,7 @@
         const verbs = {
             'grurnir': { radical: 'grurn', fr: 'grogner' },
             'kravnyar': { radical: 'kravny', fr: 'mordre' },
-            'addan': { radical: 'add', fr: 'danser' }
+            'addan': { radical: 'add', fr: 'danser' },
             'gleith': { radical: 'glei', fr: 'savoir' }
         };
 
@@ -269,8 +269,14 @@
                 endings: { je: 'e', tu: 'es', il: 'e', elle: 'e', nous: 'ons', vous: 'ez', ils: 'ent', elles: 'ent' }
             },
             groupe3: { // -re et autres
-                verbs: ['mordre', 'savoir'],
+                verbs: ['mordre'],
                 endings: { je: 's', tu: 's', il: '', elle: '', nous: 'ons', vous: 'ez', ils: 'ent', elles: 'ent' }
+            },
+            irreguliers: {
+                'savoir': { je: 'sais', tu: 'sais', il: 'sait', elle: 'sait', nous: 'savons', vous: 'savez', ils: 'savent', elles: 'savent' },
+                'être': { je: 'suis', tu: 'es', il: 'est', elle: 'est', nous: 'sommes', vous: 'êtes', ils: 'sont', elles: 'sont' },
+                'avoir': { je: 'ai', tu: 'as', il: 'a', elle: 'a', nous: 'avons', vous: 'avez', ils: 'ont', elles: 'ont' },
+                'aller': { je: 'vais', tu: 'vas', il: 'va', elle: 'va', nous: 'allons', vous: 'allez', ils: 'vont', elles: 'vont' }
             }
         };
 
@@ -281,21 +287,27 @@
         // ==============================================
 
         function conjugateFrench(infinitif, person) {
-            // Cas spéciaux d'abord
-            if (infinitif === 'grogner') {
-                const forms = { je: 'grogne', tu: 'grognes', il: 'grogne', elle: 'grogne', 
-                              nous: 'grognons', vous: 'grognez', ils: 'grognent', elles: 'grognent' };
-                return forms[person];
+            // D'abord vérifier les irréguliers
+            if (french_groups.irreguliers[infinitif]) {
+                return french_groups.irreguliers[infinitif][person];
             }
-            if (infinitif === 'mordre') {
-                const forms = { je: 'mords', tu: 'mords', il: 'mord', elle: 'mord', 
-                              nous: 'mordons', vous: 'mordez', ils: 'mordent', elles: 'mordent' };
-                return forms[person];
+            
+            // Ensuite chercher dans les groupes réguliers
+            for (const [groupName, groupData] of Object.entries(french_groups)) {
+                if (groupName === 'irreguliers') continue;
+                
+                if (groupData.verbs.includes(infinitif)) {
+                    const radical = infinitif.slice(0, -2); // Enlève les 2 dernières lettres (er, re, etc.)
+                    const ending = groupData.endings[person];
+                    return radical + ending;
+                }
             }
-            if (infinitif === 'danser') {
-                const forms = { je: 'danse', tu: 'danses', il: 'danse', elle: 'danse', 
-                              nous: 'dansons', vous: 'dansez', ils: 'dansent', elles: 'dansent' };
-                return forms[person];
+            
+            // Si pas trouvé, essayer le groupe 1 par défaut (la plupart des verbes sont du groupe 1)
+            if (infinitif.endsWith('er')) {
+                const radical = infinitif.slice(0, -2);
+                const ending = french_groups.groupe1.endings[person];
+                return radical + ending;
             }
             
             return infinitif; // Fallback
@@ -618,10 +630,23 @@
         });
 
         // Fonctions d'ajout pour la console
-        window.addVerb = function(nilfInfinitif, radical, frenchInfinitif) {
+        window.addVerb = function(nilfInfinitif, radical, frenchInfinitif, groupe = 'groupe1') {
             verbs[nilfInfinitif] = { radical, fr: frenchInfinitif };
+            
+            // Ajouter automatiquement au bon groupe français si pas déjà présent
+            if (groupe !== 'irreguliers' && french_groups[groupe] && !french_groups[groupe].verbs.includes(frenchInfinitif)) {
+                french_groups[groupe].verbs.push(frenchInfinitif);
+            }
+            
             loadDictionary();
-            console.log(`Verbe ajouté: ${nilfInfinitif} (${radical}) → ${frenchInfinitif}`);
+            console.log(`Verbe ajouté: ${nilfInfinitif} (${radical}) → ${frenchInfinitif} (${groupe})`);
+        };
+
+        window.addIrregularVerb = function(nilfInfinitif, radical, frenchInfinitif, conjugations) {
+            verbs[nilfInfinitif] = { radical, fr: frenchInfinitif };
+            french_groups.irreguliers[frenchInfinitif] = conjugations;
+            loadDictionary();
+            console.log(`Verbe irrégulier ajouté: ${nilfInfinitif} → ${frenchInfinitif}`);
         };
 
         window.addNoun = function(nilfWord, frenchWord, genderFr, genderNilf) {
