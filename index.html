@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Traducteur Français-Nilfgaardien pour une meilleure immersion dans les JdR de l'univers de "The Witcher"</title>
+    <title>Traducteur de Langue Construite</title>
     <style>
         * {
             margin: 0;
@@ -205,7 +205,7 @@
 
             <div class="translation-area">
                 <div class="input-section">
-                    <h3 id="input-label">Nilfgaardien</h3>
+                    <h3 id="input-label">Votre Langue</h3>
                     <textarea id="input-text" placeholder="Saisissez votre texte ici...">Skel gorval drae'skorr grurnir osk kravnyar nork</textarea>
                 </div>
                 <div class="input-section">
@@ -230,25 +230,187 @@
     </div>
 
     <script>
-        // Base de données linguistique
+        // Base de données linguistique - Structure plus intelligente
         const lexicon = {
+            // Mots de base
             'skel': { fr: 'la', type: 'article', gender: 'f' },
-            'gorval': { fr: 'bête', type: 'nom', gender: 'f' },
+            'gorval': { fr: 'bête', type: 'nom', gender: 'f', subject: 'il' }, // Détermine la conjugaison
             'drae\'skorr': { fr: 'sauvage', type: 'adjectif' },
-            'grurnir': { fr: 'grogner', type: 'verbe', infinitive: 'grurnir' },
             'osk': { fr: 'mais', type: 'conjonction' },
-            'kravnyar': { fr: 'mordre', type: 'verbe', infinitive: 'kravnyar' },
             'nork': { fr: 'ne...pas', type: 'négation' }
         };
 
-        // Règles grammaticales
+        // Base de données des verbes avec radicaux
+        const verbs = {
+            'grurnir': { radical: 'grurn', fr: 'grogner' },
+            'kravnyar': { radical: 'kravny', fr: 'mordre' }
+        };
+
+        // Terminaisons de conjugaison
+        const conjugationEndings = {
+            'je': 'en',
+            'tu': 'es',
+            'il': '', // infinitif sans modification
+            'elle': '', 
+            'nous': 'avam',
+            'vous': 'avel',
+            'ils': 'arin',
+            'elles': 'arin'
+        };
+
+        // Correspondances français vers personnes
+        const frenchSubjects = {
+            'je': 'je',
+            'tu': 'tu', 
+            'il': 'il',
+            'elle': 'elle',
+            'nous': 'nous',
+            'vous': 'vous',
+            'ils': 'ils',
+            'elles': 'elles',
+            'la bête': 'il', // Sujets spéciaux
+            'le chat': 'il',
+            'l\'animal': 'il'
+        };
+
+        // Génération automatique de toutes les formes conjuguées
+        function generateAllConjugations() {
+            const fullLexicon = { ...lexicon };
+            
+            // Pour chaque verbe, générer toutes les conjugaisons
+            Object.keys(verbs).forEach(infinitif => {
+                const verb = verbs[infinitif];
+                
+                // Ajouter l'infinitif
+                fullLexicon[infinitif] = {
+                    fr: verb.fr,
+                    type: 'verbe',
+                    infinitive: infinitif,
+                    radical: verb.radical,
+                    person: 'il' // 3e personne = infinitif
+                };
+                
+                // Générer toutes les conjugaisons
+                Object.keys(conjugationEndings).forEach(person => {
+                    const ending = conjugationEndings[person];
+                    const conjugatedForm = person === 'il' || person === 'elle' ? 
+                        infinitif : verb.radical + ending;
+                    
+                    // Traductions françaises selon la personne
+                    let frenchTranslation = '';
+                    if (person === 'je' || person === 'tu') {
+                        frenchTranslation = verb.fr.replace(/er$/, 'e').replace(/ir$/, 's').replace(/re$/, 's');
+                    } else if (person === 'il' || person === 'elle') {
+                        frenchTranslation = verb.fr.replace(/er$/, 'e').replace(/ir$/, 't').replace(/re$/, '');
+                    } else if (person === 'nous') {
+                        frenchTranslation = verb.fr.replace(/er$/, 'ons').replace(/ir$/, 'ons').replace(/re$/, 'ons');
+                    } else if (person === 'vous') {
+                        frenchTranslation = verb.fr.replace(/er$/, 'ez').replace(/ir$/, 'ez').replace(/re$/, 'ez');
+                    } else if (person === 'ils' || person === 'elles') {
+                        frenchTranslation = verb.fr.replace(/er$/, 'ent').replace(/ir$/, 'ent').replace(/re$/, 'ent');
+                    }
+                    
+                    // Cas spéciaux pour certains verbes
+                    if (verb.fr === 'grogner') {
+                        const grogneForms = {
+                            'je': 'grogne', 'tu': 'grognes', 'il': 'grogne', 'elle': 'grogne',
+                            'nous': 'grognons', 'vous': 'grognez', 'ils': 'grognent', 'elles': 'grognent'
+                        };
+                        frenchTranslation = grogneForms[person];
+                    } else if (verb.fr === 'mordre') {
+                        const mordForms = {
+                            'je': 'mords', 'tu': 'mords', 'il': 'mord', 'elle': 'mord',
+                            'nous': 'mordons', 'vous': 'mordez', 'ils': 'mordent', 'elles': 'mordent'
+                        };
+                        frenchTranslation = mordForms[person];
+                    }
+                    
+                    fullLexicon[conjugatedForm] = {
+                        fr: frenchTranslation,
+                        type: 'verbe_conjugué',
+                        infinitive: infinitif,
+                        person: person,
+                        radical: verb.radical
+                    };
+                });
+                
+                // Ajouter les traductions inverses (français vers conlang)
+                Object.keys(conjugationEndings).forEach(person => {
+                    const ending = conjugationEndings[person];
+                    const conjugatedForm = person === 'il' || person === 'elle' ? 
+                        infinitif : verb.radical + ending;
+                    
+                    let frenchForm = '';
+                    if (verb.fr === 'grogner') {
+                        const forms = { 'je': 'grogne', 'tu': 'grognes', 'il': 'grogne', 'elle': 'grogne',
+                                      'nous': 'grognons', 'vous': 'grognez', 'ils': 'grognent', 'elles': 'grognent' };
+                        frenchForm = forms[person];
+                    } else if (verb.fr === 'mordre') {
+                        const forms = { 'je': 'mords', 'tu': 'mords', 'il': 'mord', 'elle': 'mord',
+                                      'nous': 'mordons', 'vous': 'mordez', 'ils': 'mordent', 'elles': 'mordent' };
+                        frenchForm = forms[person];
+                    }
+                    
+                    if (frenchForm && !fullLexicon[frenchForm]) {
+                        fullLexicon[frenchForm] = {
+                            conlang: conjugatedForm,
+                            type: 'verbe_fr',
+                            person: person
+                        };
+                    }
+                });
+            });
+            
+            return fullLexicon;
+        }
+
+        // Règles grammaticales et conjugaison
         const grammarRules = {
-            negation: {
-                pattern: /nork$/,
-                transform: (sentence) => sentence.replace(/nork$/, '').trim() + ' ne...pas'
+            conjugaison: {
+                présent: {
+                    'je': 'en',
+                    'tu': 'es', 
+                    'il': '', // infinitif sans modification
+                    'elle': '', // infinitif sans modification
+                    'nous': 'avam',
+                    'vous': 'avel',
+                    'ils': 'arin',
+                    'elles': 'arin'
+                }
             },
-            verbConjugation: {
-                person3sing: (verb) => verb // 3e personne = infinitif
+            
+            // Fonction pour conjuguer un verbe
+            conjugateVerb: function(infinitif, person, tense = 'présent') {
+                const verb = lexicon[infinitif];
+                if (!verb || verb.type !== 'verbe') return infinitif;
+                
+                const radical = verb.radical || infinitif.slice(0, -2); // Enlève 'ir' par défaut
+                const endings = this.conjugaison[tense];
+                
+                if (person === 'il' || person === 'elle') {
+                    return infinitif; // 3e personne = infinitif
+                }
+                
+                return radical + (endings[person] || '');
+            },
+            
+            // Détection de la négation locale
+            processNegation: function(words) {
+                const result = [];
+                let i = 0;
+                
+                while (i < words.length) {
+                    if (i < words.length - 1 && words[i + 1] === 'nork') {
+                        // Le mot actuel + nork = négation
+                        result.push({ word: words[i], negated: true });
+                        i += 2; // Skip le nork
+                    } else {
+                        result.push({ word: words[i], negated: false });
+                        i++;
+                    }
+                }
+                
+                return result;
             }
         };
 
@@ -300,85 +462,216 @@
         }
 
         function translateToFrench(text) {
+            const fullLex = generateAllConjugations();
             const words = text.split(/\s+/);
+            const processedWords = grammarRules.processNegation(words);
             let translation = [];
             let analysis = [];
-            let hasNegation = false;
+            let grammarNotes = [];
 
-            // Détecter la négation
-            if (words[words.length - 1] === 'nork') {
-                hasNegation = true;
-                words.pop(); // Enlever nork de la liste
-            }
-
-            words.forEach(word => {
-                const entry = lexicon[word];
+            processedWords.forEach(({ word, negated }) => {
+                const entry = fullLex[word];
                 if (entry) {
-                    translation.push(entry.fr);
+                    let translatedWord = entry.fr;
+                    
+                    // Traitement de la négation
+                    if (negated && (entry.type === 'verbe' || entry.type === 'verbe_conjugué')) {
+                        translatedWord = 'ne ' + translatedWord + ' pas';
+                        grammarNotes.push(`Négation appliquée à "${word}" (${entry.person})`);
+                    }
+                    
+                    translation.push(translatedWord);
                     analysis.push({
-                        original: word,
-                        translation: entry.fr,
-                        type: entry.type
+                        original: word + (negated ? ' nork' : ''),
+                        translation: translatedWord,
+                        type: entry.type + (entry.person ? ' (' + entry.person + ')' : ''),
+                        negated: negated
                     });
                 } else {
                     translation.push(`[${word}]`);
                     analysis.push({
-                        original: word,
+                        original: word + (negated ? ' nork' : ''),
                         translation: `[inconnu]`,
-                        type: 'inconnu'
+                        type: 'inconnu',
+                        negated: negated
                     });
                 }
             });
 
-            // Traitement de la négation
-            if (hasNegation) {
-                // Trouver le verbe principal
-                const verbIndex = analysis.findIndex(item => item.type === 'verbe');
-                if (verbIndex !== -1) {
-                    translation[verbIndex] = 'ne ' + translation[verbIndex] + ' pas';
-                }
-            }
-
             return {
                 translation: translation.join(' '),
                 analysis: analysis,
-                grammar: hasNegation ? ['Négation détectée'] : []
+                grammar: grammarNotes
             };
         }
 
         function translateToConlang(text) {
-            // Version simplifiée pour la traduction inverse
-            const frenchToConlang = {};
-            Object.keys(lexicon).forEach(key => {
-                frenchToConlang[lexicon[key].fr] = key;
-            });
-
+            const fullLex = generateAllConjugations();
             const words = text.toLowerCase().split(/\s+/);
             let translation = [];
             let analysis = [];
+            let grammarNotes = [];
+            let i = 0;
 
-            words.forEach(word => {
-                if (frenchToConlang[word]) {
-                    translation.push(frenchToConlang[word]);
-                    analysis.push({
-                        original: word,
-                        translation: frenchToConlang[word],
-                        type: lexicon[frenchToConlang[word]].type
-                    });
+            // Détecter le sujet pour déterminer la conjugaison
+            let currentSubject = 'il'; // Par défaut
+            let subjectFound = false;
+
+            // Premier passage : identifier le sujet
+            for (let j = 0; j < words.length; j++) {
+                const phrase = words.slice(0, j + 2).join(' '); // "la bête", etc.
+                if (frenchSubjects[phrase]) {
+                    currentSubject = frenchSubjects[phrase];
+                    subjectFound = true;
+                    break;
+                }
+                if (frenchSubjects[words[j]]) {
+                    currentSubject = frenchSubjects[words[j]];
+                    subjectFound = true;
+                    break;
+                }
+            }
+
+            // Première étape : identifier et marquer toutes les négations
+            let processedSentence = [];
+            let tempWords = [...words];
+            
+            while (tempWords.length > 0) {
+                let neIndex = tempWords.indexOf('ne');
+                if (neIndex === -1) {
+                    // Plus de "ne", ajouter le reste
+                    processedSentence = processedSentence.concat(tempWords);
+                    break;
+                }
+                
+                // Trouver "pas" après "ne"
+                let pasIndex = -1;
+                for (let j = neIndex + 1; j < tempWords.length; j++) {
+                    if (tempWords[j] === 'pas') {
+                        pasIndex = j;
+                        break;
+                    }
+                }
+                
+                if (pasIndex !== -1) {
+                    // Ajouter les mots avant "ne"
+                    processedSentence = processedSentence.concat(tempWords.slice(0, neIndex));
+                    
+                    // Traiter la partie entre "ne" et "pas"
+                    const betweenWords = tempWords.slice(neIndex + 1, pasIndex);
+                    
+                    // Trouver le verbe et le marquer comme négatif
+                    let verbProcessed = false;
+                    for (let k = 0; k < betweenWords.length; k++) {
+                        const w = betweenWords[k];
+                        if (!verbProcessed) {
+                            // Vérifier si c'est un verbe
+                            let verbEntry = Object.keys(fullLex).find(key => {
+                                const entry = fullLex[key];
+                                return entry.fr === w && entry.person === currentSubject &&
+                                       (entry.type === 'verbe' || entry.type === 'verbe_conjugué');
+                            });
+                            
+                            // Si pas trouvé, essayer de trouver n'importe quel verbe avec cette forme française
+                            if (!verbEntry) {
+                                verbEntry = Object.keys(fullLex).find(key => {
+                                    const entry = fullLex[key];
+                                    return entry.fr === w && (entry.type === 'verbe' || entry.type === 'verbe_conjugué');
+                                });
+                            }
+                            
+                            if (verbEntry) {
+                                processedSentence.push({ word: w, negated: true, conlangForm: verbEntry });
+                                verbProcessed = true;
+                            } else {
+                                processedSentence.push({ word: w, negated: false });
+                            }
+                        } else {
+                            processedSentence.push({ word: w, negated: false });
+                        }
+                    }
+                    
+                    // Continuer après "pas"
+                    tempWords = tempWords.slice(pasIndex + 1);
                 } else {
-                    translation.push(`[${word}]`);
+                    // "ne" trouvé mais pas de "pas", traiter normalement
+                    processedSentence.push({ word: tempWords[neIndex], negated: false });
+                    tempWords = tempWords.slice(neIndex + 1);
+                }
+            }
+            
+            // Enlever les logs de debug maintenant que ça marche
+            // console.log('Phrase traitée:', processedSentence);
+            // console.log('Sujet détecté:', currentSubject);
+            processedSentence.forEach(item => {
+                if (typeof item === 'string') {
+                    item = { word: item, negated: false };
+                }
+                
+                const word = item.word;
+                
+                if (item.negated && item.conlangForm) {
+                    // Verbe négatif
+                    translation.push(item.conlangForm + ' nork');
                     analysis.push({
-                        original: word,
-                        translation: `[inconnu]`,
-                        type: 'inconnu'
+                        original: `ne ${word} pas`,
+                        translation: `${item.conlangForm} nork`,
+                        type: `verbe_négatif (${currentSubject})`
                     });
+                    grammarNotes.push(`Négation détectée sur "${word}"`);
+                } else {
+                    // Traduction normale
+                    let found = false;
+                    
+                    // Chercher traduction directe
+                    const directEntry = Object.keys(fullLex).find(key => {
+                        const entry = fullLex[key];
+                        return entry.fr === word;
+                    });
+                    
+                    if (directEntry) {
+                        translation.push(directEntry);
+                        analysis.push({
+                            original: word,
+                            translation: directEntry,
+                            type: fullLex[directEntry].type
+                        });
+                        found = true;
+                    } else {
+                        // Chercher un verbe à conjuguer
+                        const verbEntry = Object.keys(fullLex).find(key => {
+                            const entry = fullLex[key];
+                            return entry.fr === word && entry.person === currentSubject &&
+                                   (entry.type === 'verbe' || entry.type === 'verbe_conjugué');
+                        });
+                        
+                        if (verbEntry) {
+                            translation.push(verbEntry);
+                            analysis.push({
+                                original: word,
+                                translation: verbEntry,
+                                type: `verbe (${currentSubject})`
+                            });
+                            grammarNotes.push(`Verbe conjugué selon le sujet "${currentSubject}"`);
+                            found = true;
+                        }
+                    }
+                    
+                    if (!found) {
+                        translation.push(`[${word}]`);
+                        analysis.push({
+                            original: word,
+                            translation: `[inconnu]`,
+                            type: 'inconnu'
+                        });
+                    }
                 }
             });
 
             return {
                 translation: translation.join(' '),
                 analysis: analysis,
-                grammar: []
+                grammar: grammarNotes
             };
         }
 
@@ -390,24 +683,101 @@
             analysisData.forEach(item => {
                 const tag = document.createElement('div');
                 tag.className = 'word-tag';
-                tag.innerHTML = `<strong>${item.original}</strong> → ${item.translation} <em>(${item.type})</em>`;
+                let content = `<strong>${item.original}</strong> → ${item.translation} <em>(${item.type})</em>`;
+                if (item.negated) content += ' <span style="color: red;">✗ négatif</span>';
+                tag.innerHTML = content;
                 wordAnalysis.appendChild(tag);
             });
 
             grammarNotes.innerHTML = analysisData.grammar ? 
-                analysisData.grammar.map(note => `<div>• ${note}</div>`).join('') : '';
+                analysisData.grammar.map(note => `<div>📝 ${note}</div>`).join('') : '';
+        }
+
+        // Fonction pour ajouter facilement des verbes
+        function addVerb(infinitif, frenchTranslation) {
+            const radical = infinitif.slice(0, -2); // Enlève 'ir'
+            
+            // Ajouter l'infinitif
+            lexicon[infinitif] = { 
+                fr: frenchTranslation, 
+                type: 'verbe', 
+                infinitive: infinitif, 
+                radical: radical 
+            };
+            
+            // Ajouter toutes les conjugaisons automatiquement
+            const conjugations = {
+                'en': { fr: frenchTranslation.replace(/r$/, 's'), person: 'je' }, // je
+                'es': { fr: frenchTranslation.replace(/r$/, 's'), person: 'tu' }, // tu
+                'avam': { fr: frenchTranslation.replace(/r$/, 'ons'), person: 'nous' }, // nous
+                'avel': { fr: frenchTranslation.replace(/r$/, 'ez'), person: 'vous' }, // vous
+                'arin': { fr: frenchTranslation.replace(/r$/, 'ent'), person: 'ils' } // ils
+            };
+            
+            Object.keys(conjugations).forEach(ending => {
+                const conjugatedForm = (ending === '' ? infinitif : radical + ending);
+                lexicon[conjugatedForm] = {
+                    fr: conjugations[ending].fr,
+                    type: 'verbe_conjugué',
+                    infinitive: infinitif,
+                    person: conjugations[ending].person,
+                    tense: 'présent'
+                };
+            });
         }
 
         // Afficher le dictionnaire au chargement
         function loadDictionary() {
+            const fullLex = generateAllConjugations();
             const dictContent = document.getElementById('dictionary-content');
-            Object.keys(lexicon).forEach(word => {
-                const entry = document.createElement('div');
-                entry.className = 'dict-entry';
-                entry.innerHTML = `<strong>${word}</strong> → ${lexicon[word].fr} <em>(${lexicon[word].type})</em>`;
-                dictContent.appendChild(entry);
+            
+            // Grouper par types
+            const groups = {
+                'Verbes (infinitifs)': {},
+                'Articles & Noms': {},
+                'Autres mots': {},
+                'Conjugaisons': {}
+            };
+            
+            Object.keys(fullLex).forEach(word => {
+                const entry = fullLex[word];
+                if (entry.type === 'verbe') {
+                    groups['Verbes (infinitifs)'][word] = entry;
+                } else if (entry.type === 'verbe_conjugué') {
+                    groups['Conjugaisons'][word] = entry;
+                } else if (entry.type === 'article' || entry.type === 'nom') {
+                    groups['Articles & Noms'][word] = entry;
+                } else if (entry.fr) { // Seulement les mots avec traduction française
+                    groups['Autres mots'][word] = entry;
+                }
+            });
+            
+            Object.keys(groups).forEach(groupName => {
+                if (Object.keys(groups[groupName]).length > 0) {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.innerHTML = `<h4 style="color: #495057; margin: 15px 0 10px 0; border-bottom: 1px solid #dee2e6; padding-bottom: 5px;">${groupName}</h4>`;
+                    dictContent.appendChild(groupDiv);
+                    
+                    Object.keys(groups[groupName]).forEach(word => {
+                        const entry = groups[groupName][word];
+                        const div = document.createElement('div');
+                        div.className = 'dict-entry';
+                        let content = `<strong>${word}</strong> → ${entry.fr}`;
+                        if (entry.person) content += ` <em>(${entry.person})</em>`;
+                        if (entry.type) content += ` <small style="color: #6c757d;">[${entry.type}]</small>`;
+                        div.innerHTML = content;
+                        dictContent.appendChild(div);
+                    });
+                }
             });
         }
+
+        // Fonction pour ajouter facilement des verbes (appelée depuis la console)
+        window.addNewVerb = function(infinitif, radical, frenchTranslation) {
+            verbs[infinitif] = { radical: radical, fr: frenchTranslation };
+            loadDictionary(); // Recharger le dictionnaire
+            console.log(`Verbe ajouté : ${infinitif} (radical: ${radical}) → ${frenchTranslation}`);
+        };
 
         // Traduction automatique au chargement
         window.onload = function() {
