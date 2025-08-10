@@ -419,9 +419,135 @@
             return irregulars[participle] || participle;
         }
 
-        // Traduction nilfgaardien → français
-        function translateToFrench(text) {
-            const words = text.split(/\s+/);
+        // Traduction français → nilfgaardien
+function translateToConlang(text) {
+    // 1. D'abord traiter les expressions composées françaises (PRIORITÉ)
+    let processedText = text;
+    let translation = [];
+    let analysis = [];
+    let grammarNotes = [];
+    
+    // Chercher toutes les expressions françaises composées dans basicLexicon et nouns
+    const allFrenchExpressions = [];
+    
+    // Chercher dans basicLexicon
+    Object.keys(basicLexicon).forEach(key => {
+        if (basicLexicon[key].fr.includes(' ')) {
+            allFrenchExpressions.push({
+                french: basicLexicon[key].fr,
+                nilfgaardian: key,
+                type: basicLexicon[key].type
+            });
+        }
+    });
+    
+    // Chercher dans nouns
+    Object.keys(nouns).forEach(key => {
+        if (nouns[key].fr.includes(' ')) {
+            allFrenchExpressions.push({
+                french: nouns[key].fr,
+                nilfgaardian: key,
+                type: 'nom'
+            });
+        }
+    });
+    
+    // Trier par longueur décroissante (expressions les plus longues d'abord)
+    allFrenchExpressions.sort((a, b) => b.french.length - a.french.length);
+    
+    // Remplacer les expressions trouvées par des marqueurs
+    const markers = [];
+    allFrenchExpressions.forEach((expr, index) => {
+        const regex = new RegExp('\\b' + expr.french.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi');
+        if (regex.test(processedText)) {
+            const marker = `__EXPR_${index}__`;
+            markers.push({
+                marker: marker,
+                original: expr.french,
+                translation: expr.nilfgaardian,
+                type: expr.type
+            });
+            processedText = processedText.replace(regex, marker);
+        }
+    });
+    
+    // 2. Traiter le texte mot par mot
+    const words = processedText.toLowerCase().split(/\s+/);
+    const { person: subject, source } = detectSubject(words, 'french-to-conlang');
+    
+    if (source === 'pronoun') grammarNotes.push(`Pronom "${subject}" détecté`);
+    
+    const compoundTenses = detectCompoundTense(words);
+    
+    compoundTenses.forEach(item => {
+        if (item.type === 'passé_composé') {
+            const infinitive = participleToInfinitive(item.verb);
+            const nilfInfinitive = Object.keys(verbs).find(key => verbs[key].fr === infinitive);
+            
+            if (nilfInfinitive) {
+                translation.push(`vaar ${nilfInfinitive}`);
+                analysis.push({ original: `${item.auxiliary} ${item.verb}`, translation: `vaar ${nilfInfinitive}`, type: 'passé_composé' });
+                grammarNotes.push(`Passé composé détecté: "${item.auxiliary} ${item.verb}" → vaar + infinitif`);
+            } else {
+                translation.push(`vaar [${item.verb}]`);
+                analysis.push({ original: `${item.auxiliary} ${item.verb}`, translation: `vaar [${item.verb}]`, type: 'passé_composé (verbe inconnu)' });
+            }
+        } else if (item.type === 'futur_proche') {
+            const nilfInfinitive = Object.keys(verbs).find(key => verbs[key].fr === item.verb);
+            
+            if (nilfInfinitive) {
+                translation.push(`voor ${nilfInfinitive}`);
+                analysis.push({ original: `${item.auxiliary} ${item.verb}`, translation: `voor ${nilfInfinitive}`, type: 'futur_proche' });
+                grammarNotes.push(`Futur proche détecté: "${item.auxiliary} ${item.verb}" → voor + infinitif`);
+            } else {
+                translation.push(`voor [${item.verb}]`);
+                analysis.push({ original: `${item.auxiliary} ${item.verb}`, translation: `voor [${item.verb}]`, type: 'futur_proche (verbe inconnu)' });
+            }
+        } else {
+            const word = item.word;
+            
+            // Vérifier si c'est un marqueur d'expression composée
+            const markerMatch = markers.find(m => m.marker === word);
+            if (markerMatch) {
+                translation.push(markerMatch.translation);
+                analysis.push({ 
+                    original: markerMatch.original, 
+                    translation: markerMatch.translation, 
+                    type: markerMatch.type + ' (expression composée)' 
+                });
+                return;
+            }
+            
+            const basicEntry = Object.keys(basicLexicon).find(key => basicLexicon[key].fr === word);
+            if (basicEntry) {
+                translation.push(basicEntry);
+                analysis.push({ original: word, translation: basicEntry, type: basicLexicon[basicEntry].type });
+                return;
+            }
+            
+            const nounEntry = Object.keys(nouns).find(key => nouns[key].fr === word);
+            if (nounEntry) {
+                translation.push(nounEntry);
+                analysis.push({ original: word, translation: nounEntry, type: 'nom' });
+                return;
+            }
+            
+            const verbEntry = findFrenchVerb(word);
+            if (verbEntry) {
+                const nilfForm = conjugateNilfgaardian(verbEntry.nilfInfinitif, subject, verbEntry.tense);
+                translation.push(nilfForm);
+                analysis.push({ original: word, translation: nilfForm, type: 'verbe (' + subject + ', ' + verbEntry.tense + ')' });
+                grammarNotes.push(`Verbe "${word}" conjugué pour "${subject}" au ${verbEntry.tense}`);
+                return;
+            }
+            
+            translation.push(`[${word}]`);
+            analysis.push({ original: word, translation: `[inconnu]`, type: 'inconnu' });
+        }
+    });
+    
+    return { translation: translation.join(' '), analysis, grammar: grammarNotes };
+}
             const { person: subject } = detectSubject(words, 'conlang-to-french');
             
             let translation = [];
@@ -441,8 +567,60 @@
             }
             
             let skipNext = false;
-            processedWords.forEach(({ word, negated }, index) => {
-                if (skipNext) { skipNext = false; return; }
+            // D'abord chercher les expressions composées dans le texte original
+const compoundMatches = [];
+const textLower = text.toLowerCase();
+
+// Chercher toutes les expressions dans basicLexicon et nouns
+const allExpressions = [];
+Object.keys(basicLexicon).forEach(key => {
+    if (key.includes(' ') || key.includes('\'')) {
+        allExpressions.push({ key: key, translation: basicLexicon[key].fr, type: basicLexicon[key].type });
+    }
+});
+Object.keys(nouns).forEach(key => {
+    if (key.includes(' ') || key.includes('\'')) {
+        allExpressions.push({ key: key, translation: nouns[key].fr, type: 'nom' });
+    }
+});
+
+// Trier par longueur décroissante
+allExpressions.sort((a, b) => b.key.length - a.key.length);
+
+// Marquer les expressions trouvées
+allExpressions.forEach(expr => {
+    const index = textLower.indexOf(expr.key.toLowerCase());
+    if (index !== -1) {
+        const before = index === 0 || /\s/.test(textLower[index - 1]);
+        const after = index + expr.key.length === textLower.length || /\s/.test(textLower[index + expr.key.length]);
+        
+        if (before && after) {
+            compoundMatches.push({
+                start: index,
+                end: index + expr.key.length,
+                original: text.substring(index, index + expr.key.length),
+                translation: expr.translation,
+                type: expr.type
+            });
+        }
+    }
+});
+
+// Si on a trouvé des expressions composées, les traiter en priorité
+if (compoundMatches.length > 0) {
+    compoundMatches.forEach(match => {
+        translation.push(match.translation);
+        analysis.push({ 
+            original: match.original, 
+            translation: match.translation, 
+            type: match.type + ' (expression composée)' 
+        });
+    });
+    return { translation: translation.join(' '), analysis, grammar: grammarNotes };
+}
+
+processedWords.forEach(({ word, negated }) => {
+    if (skipNext) { skipNext = false; return; }
                 
                 if (word === 'vaar' && index + 1 < processedWords.length && verbs[processedWords[index + 1].word]) {
                     const nextWord = processedWords[index + 1].word;
