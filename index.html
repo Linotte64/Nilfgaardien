@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traducteur de Langue Construite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; padding: 20px;
+        }
+        .container {
+            max-width: 1000px; margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; text-align: center; padding: 30px; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .translator-section { padding: 40px; }
+        .language-selector { display: flex; justify-content: center; align-items: center; margin-bottom: 30px; gap: 20px; }
+        .lang-option { background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 15px; padding: 15px 25px; cursor: pointer; font-weight: 600; }
+        .lang-option.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .swap-btn { background: linear-gradient(135deg, #ff6b6b, #feca57); border: none; border-radius: 50%; width: 50px; height: 50px; cursor: pointer; color: white; font-size: 20px; }
+        .translation-area { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        textarea { width: 100%; height: 150px; border: 2px solid #e9ecef; border-radius: 15px; padding: 20px; font-size: 16px; resize: none; }
+        .translate-btn { display: block; width: 200px; margin: 20px auto; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 25px; padding: 15px 30px; font-size: 16px; cursor: pointer; }
+        .analysis { background: #f8f9fa; border-radius: 15px; padding: 20px; margin-top: 20px; display: none; }
+        .word-tag { background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 5px 10px; margin: 5px; display: inline-block; font-size: 14px; }
+        .dictionary { background: #fff; border-radius: 15px; padding: 20px; margin-top: 30px; border: 1px solid #e9ecef; }
+        .dict-entry { padding: 8px 0; border-bottom: 1px solid #f1f3f4; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✨ Traducteur de Langue Construite ✨</h1>
+            <p>Système automatique avec conjugaisons intelligentes</p>
+        </div>
+        <div class="translator-section">
+            <div class="language-selector">
+                <div class="lang-option active">Votre Langue</div>
+                <button class="swap-btn" onclick="swapLanguages()">⇄</button>
+                <div class="lang-option">Français</div>
+            </div>
+            <div class="translation-area">
+                <div>
+                    <h3 id="input-label">Votre Langue</h3>
+                    <textarea id="input-text" placeholder="Saisissez votre texte ici...">Skel gorval drae'skorr grurnir osk kravnyar nork</textarea>
+                </div>
+                <div>
+                    <h3 id="output-label">Français</h3>
+                    <textarea id="output-text" placeholder="La traduction apparaîtra ici..." readonly></textarea>
+                </div>
+            </div>
+            <button class="translate-btn" onclick="translate()">🔄 Traduire</button>
+            <div class="analysis" id="analysis">
+                <h4>📋 Analyse Grammaticale</h4>
+                <div id="word-analysis"></div>
+                <div id="grammar-notes"></div>
+            </div>
+            <div class="dictionary">
+                <h3>📚 Dictionnaire</h3>
+                <div id="dictionary-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dictionnaire de base étendu
+        const basicLexicon = {
+            'skel': { fr: 'la', type: 'article' },
+            'osk': { fr: 'mais', type: 'conjonction' },
+            'drae\'skorr': { fr: 'sauvage', type: 'adjectif' },
+            'nork': { fr: 'ne...pas', type: 'négation' },
+            // Adverbes/Prépositions/Conjonctions
+            'a': { fr: 'vers', type: 'préposition' },
+            'aen': { fr: 'pour', type: 'préposition' },
+            'aep': { fr: 'sur', type: 'préposition' },
+            'hwre': { fr: 'ici', type: 'adverbe' },
+            'na': { fr: 'ou', type: 'conjonction' },
+            'namyn': { fr: 'sauf', type: 'préposition' },
+            'neén': { fr: 'non', type: 'adverbe' },
+            'veldi': { fr: 'très', type: 'adverbe' },
+            'vort': { fr: 'loin', type: 'adverbe' },
+            'y': { fr: 'et', type: 'conjonction' },
+            'yn': { fr: 'dans', type: 'préposition' },
+            'var\'oom': { fr: 'pourquoi', type: 'interrogatif' },
+            // Pronoms/Déterminants
+            'eve': { fr: 'tout', type: 'pronom' },
+            'evelienn': { fr: 'tout le monde', type: 'pronom' },
+            'thu': { fr: 'tu', type: 'pronom' },
+            'uav': { fr: 'ton', type: 'déterminant' },
+            'visse': { fr: 'vous', type: 'pronom' },
+            'que': { fr: 'que', type: 'interrogatif' },
+            'qua': { fr: 'quoi', type: 'interrogatif' },
+            'que\'ess': { fr: 'combien', type: 'interrogatif' },
+            // Interjections/Formules
+            'awr': { fr: 'monsieur', type: 'formule' },
+            'hael': { fr: 'salut', type: 'formule' },
+            'squesse': { fr: 'excusez-moi', type: 'formule' },
+            'taing': { fr: 'merci', type: 'formule' },
+            'va faill': { fr: 'au revoir', type: 'formule' },
+            // Adjectifs
+            'adhart': { fr: 'en avant', type: 'adjectif' },
+            'ard': { fr: 'grand', type: 'adjectif' },
+            'bloedar': { fr: 'sanglant', type: 'adjectif' },
+            'calm': { fr: 'calme', type: 'adjectif' },
+            'eigean': { fr: 'nécessaire', type: 'adjectif' },
+            'geehaet': { fr: 'dur', type: 'adjectif' },
+            'gvaedyn': { fr: 'tenace', type: 'adjectif' },
+            'gvaelded': { fr: 'assoiffé de sang', type: 'adjectif' },
+            'hen': { fr: 'vieux', type: 'adjectif' },
+            'math': { fr: 'bien', type: 'adjectif' },
+            'tana': { fr: 'profond', type: 'adjectif' },
+            'tanalach': { fr: 'peu profond', type: 'adjectif' },
+            'veloë': { fr: 'rapide', type: 'adjectif' },
+            'wen': { fr: 'blanc', type: 'adjectif' },
+            'esse\'lath': { fr: 'lâche', type: 'adjectif' }
+        };
+
+        // Noms avec genres (tous définis comme masculin/féminin par défaut)
+        const nouns = {
+            'gorval': { fr: 'bête', gender_fr: 'f', gender_conlang: 'm' },
+            'mithel': { fr: 'chat', gender_fr: 'm', gender_conlang: 'f' },
+            // Nouveaux noms
+            'allaidh': { fr: 'barbares', gender_fr: 'm', gender_conlang: 'm' },
+            'arse': { fr: 'cul', gender_fr: 'm', gender_conlang: 'm' },
+            'áth': { fr: 'oeil', gender_fr: 'm', gender_conlang: 'm' },
+            'a\'vean': { fr: 'porte', gender_fr: 'f', gender_conlang: 'f' },
+            'beist': { fr: 'animal', gender_fr: 'm', gender_conlang: 'm' },
+            'beseta': { fr: 'pince à épiler', gender_fr: 'f', gender_conlang: 'f' },
+            'bhampair': { fr: 'vampire', gender_fr: 'm', gender_conlang: 'm' },
+            'bleidd': { fr: 'loup', gender_fr: 'm', gender_conlang: 'm' },
+            'bu\'rac': { fr: 'plouc', gender_fr: 'm', gender_conlang: 'm' },
+            'caer': { fr: 'terre', gender_fr: 'f', gender_conlang: 'f' },
+            'carn': { fr: 'tertre', gender_fr: 'm', gender_conlang: 'm' },
+            'ceas\'raet': { fr: 'empire', gender_fr: 'm', gender_conlang: 'm' },
+            'creasa': { fr: 'devoir', gender_fr: 'm', gender_conlang: 'm' },
+            'cuan': { fr: 'prostituée', gender_fr: 'f', gender_conlang: 'f' },
+            'cyrche': { fr: 'attaquant', gender_fr: 'm', gender_conlang: 'm' },
+            'daerienn': { fr: 'sorcier', gender_fr: 'm', gender_conlang: 'm' },
+            'deith': { fr: 'flamme', gender_fr: 'f', gender_conlang: 'f' },
+            'deithwen': { fr: 'flamme blanche', gender_fr: 'f', gender_conlang: 'f' },
+            'dòchas': { fr: 'espoir', gender_fr: 'm', gender_conlang: 'm' },
+            'd\'yaebl': { fr: 'diable', gender_fr: 'm', gender_conlang: 'm' },
+            'e\'er': { fr: 'honneur', gender_fr: 'm', gender_conlang: 'm' },
+            'eisio': { fr: 'glace', gender_fr: 'f', gender_conlang: 'f' },
+            'esse': { fr: 'volonté', gender_fr: 'f', gender_conlang: 'f' },
+            'ess\'spaet': { fr: 'crachat', gender_fr: 'm', gender_conlang: 'm' },
+            'evgyr': { fr: 'maintenant', gender_fr: 'm', gender_conlang: 'm' },
+            'evn\'gesaen': { fr: 'ambassadeur', gender_fr: 'm', gender_conlang: 'm' },
+            'feainn': { fr: 'soleil', gender_fr: 'm', gender_conlang: 'm' },
+            'fion': { fr: 'vin', gender_fr: 'm', gender_conlang: 'm' },
+            'fydd': { fr: 'passage', gender_fr: 'm', gender_conlang: 'm' },
+            'gaedeen': { fr: 'fait', gender_fr: 'm', gender_conlang: 'm' },
+            'gàrdan': { fr: 'gardes', gender_fr: 'f', gender_conlang: 'm' },
+            'ge\'erillan': { fr: 'guérillas', gender_fr: 'f', gender_conlang: 'm' },
+            'gláeddyv': { fr: 'épée', gender_fr: 'f', gender_conlang: 'f' },
+            'glòir': { fr: 'gloire', gender_fr: 'f', gender_conlang: 'f' },
+            'glys': { fr: 'rivière', gender_fr: 'f', gender_conlang: 'f' },
+            'grìffean': { fr: 'griffon', gender_fr: 'm', gender_conlang: 'm' },
+            'hanse': { fr: 'hanse', gender_fr: 'f', gender_conlang: 'f' },
+            'havfrue': { fr: 'sirène', gender_fr: 'f', gender_conlang: 'f' },
+            'heet': { fr: 'fièvre', gender_fr: 'f', gender_conlang: 'f' },
+            'hoersoon': { fr: 'fils de pute', gender_fr: 'm', gender_conlang: 'm' },
+            'il\'edrith': { fr: 'magie', gender_fr: 'f', gender_conlang: 'f' },
+            'il\'edrithean': { fr: 'mage', gender_fr: 'm', gender_conlang: 'm' },
+            'inis': { fr: 'île', gender_fr: 'f', gender_conlang: 'f' },
+            'iss\'kund': { fr: 'médecine', gender_fr: 'f', gender_conlang: 'f' },
+            'iss\'ra': { fr: 'esclave', gender_fr: 'm', gender_conlang: 'm' },
+            'jakkten': { fr: 'chasse', gender_fr: 'f', gender_conlang: 'f' },
+            'joc': { fr: 'blague', gender_fr: 'f', gender_conlang: 'f' },
+            'Ker\'zaer': { fr: 'empereur', gender_fr: 'm', gender_conlang: 'm' },
+            'kroofeir': { fr: 'meule de foin', gender_fr: 'f', gender_conlang: 'f' },
+            'kusse': { fr: 'vagin', gender_fr: 'm', gender_conlang: 'm' },
+            'laeke': { fr: 'lac', gender_fr: 'm', gender_conlang: 'm' },
+            'larwm': { fr: 'aide', gender_fr: 'f', gender_conlang: 'f' },
+            'luned': { fr: 'fille', gender_fr: 'f', gender_conlang: 'f' },
+            'Lyrien': { fr: 'Lyrien', gender_fr: 'm', gender_conlang: 'm' },
+            'maerche': { fr: 'femme', gender_fr: 'f', gender_conlang: 'f' },
+            'moera': { fr: 'marais', gender_fr: 'm', gender_conlang: 'm' },
+            'morvud': { fr: 'ennemi', gender_fr: 'm', gender_conlang: 'm' },
+            'niss': { fr: 'aisselles', gender_fr: 'f', gender_conlang: 'f' },
+            'nordlingaen': { fr: 'Nordien', gender_fr: 'm', gender_conlang: 'm' },
+            'nyald': { fr: 'aiguille', gender_fr: 'f', gender_conlang: 'f' },
+            'pest': { fr: 'peste', gender_fr: 'f', gender_conlang: 'f' },
+            'pund': { fr: 'vomi', gender_fr: 'm', gender_conlang: 'm' },
+            'orde': { fr: 'ordre', gender_fr: 'm', gender_conlang: 'm' },
+            'raet': { fr: 'pays', gender_fr: 'm', gender_conlang: 'm' },
+            'rechta': { fr: 'verdict', gender_fr: 'm', gender_conlang: 'm' },
+            'rotsaak': { fr: 'salopard', gender_fr: 'm', gender_conlang: 'm' },
+            'sàbh': { fr: 'scie', gender_fr: 'f', gender_conlang: 'f' },
+            'se\'ege': { fr: 'victoire', gender_fr: 'f', gender_conlang: 'f' },
+            'seiâ\'fyll': { fr: 'formation', gender_fr: 'f', gender_conlang: 'f' },
+            'strigea': { fr: 'strige', gender_fr: 'f', gender_conlang: 'f' },
+            'stronthe': { fr: 'merde', gender_fr: 'f', gender_conlang: 'f' },
+            'tedd': { fr: 'temps', gender_fr: 'm', gender_conlang: 'm' },
+            'tròcair': { fr: 'pitié', gender_fr: 'f', gender_conlang: 'f' },
+            'toorean': { fr: 'colère', gender_fr: 'f', gender_conlang: 'f' },
+            'tuv\'en': { fr: 'mort', gender_fr: 'f', gender_conlang: 'f' },
+            'twe': { fr: 'deux', gender_fr: 'm', gender_conlang: 'm' },
+            'ulf\'heida': { fr: 'monstre', gender_fr: 'm', gender_conlang: 'm' },
+            'va\'en': { fr: 'voyage', gender_fr: 'm', gender_conlang: 'm' },
+            'vaerb\'tinnea': { fr: 'bonne volonté', gender_fr: 'f', gender_conlang: 'f' },
+            'vaer\'truov': { fr: 'espoir', gender_fr: 'm', gender_conlang: 'm' },
+            'vatt\'ghern': { fr: 'sorceleur', gender_fr: 'm', gender_conlang: 'm' },
+            'verloos': { fr: 'perte', gender_fr: 'f', gender_conlang: 'f' },
+            'vùtter': { fr: 'eau', gender_fr: 'f', gender_conlang: 'f' },
+            'zaighdera': { fr: 'bataillon', gender_fr: 'm', gender_conlang: 'm' },
+            'zèamach': { fr: 'avertissement', gender_fr: 'm', gender_conlang: 'm' }
+        };
+
+        // Verbes avec radicaux - ÉNORMÉMENT étendus !
+        const verbs = {
+            'grurnir': { radical: 'grurn', fr: 'grogner' },
+            'kravnyar': { radical: 'kravny', fr: 'mordre' },
+            'addan': { radical: 'add', fr: 'danser' },
+            'gleith': { radical: 'glei', fr: 'savoir' },
+            // Nouveaux verbes
+            'aâ\'anval': { radical: 'aâ\'anv', fr: 'attaquer' },
+            'aecáemm': { radical: 'aecáe', fr: 'suivre' },
+            'aedragh': { radical: 'aedrag', fr: 'provoquer' },
+            'claidheamh': { radical: 'claidhea', fr: 'rengainer' },
+            'creasan': { radical: 'creas', fr: 'devoir' },
+            'daar\'tocht': { radical: 'daar\'toc', fr: 'conspirer' },
+            'deien': { radical: 'dei', fr: 'servir' },
+            'eigean': { radical: 'eig', fr: 'falloir' },
+            'ess': { radical: 'ess', fr: 'être' },
+            'hvren': { radical: 'hvr', fr: 'tuer' },
+            'iarean': { radical: 'iare', fr: 'chercher' },
+            'laddhe': { radical: 'laddh', fr: 'tuer' },
+            'mire': { radical: 'mir', fr: 'regarder' },
+            'mare': { radical: 'mar', fr: 'voir' },
+            'morv': { radical: 'morv', fr: 'mourir' },
+            'rach': { radical: 'rach', fr: 'bouger' },
+            'ratreut': { radical: 'ratreut', fr: 'fuir' },
+            'var': { radical: 'var', fr: 'aller' },
+            'vaer\'truov': { radical: 'vaer\'tr', fr: 'espérer' },
+            'vedren': { radical: 'vedr', fr: 'tenir' }
+        };
+
+        let currentDirection = 'conlang-to-french';
+
+        // Conjugaisons nilfgaardiennes par temps
+        const nilf_endings = {
+            présent: { 'je': 'en', 'tu': 'es', 'il': '', 'elle': '', 'nous': 'avam', 'vous': 'avel', 'ils': 'arin', 'elles': 'arin' },
+            futur: { 'je': 'rash', 'tu': 'resh', 'il': 'rin', 'elle': 'rin', 'nous': 'ravam', 'vous': 'ravel', 'ils': 'ranim', 'elles': 'ranim' },
+            imparfait: { 'je': 'ien', 'tu': 'ias', 'il': 'ier', 'elle': 'ier', 'nous': 'iavem', 'vous': 'iavel', 'ils': 'iarn', 'elles': 'iarn' }
+        };
+
+        // Conjugaisons françaises simplifiées mais complètes
+        function conjugateFrench(infinitif, person, tense = 'présent') {
+            // Cas spéciaux existants
+            if (infinitif === 'grogner') {
+                const forms = { je: 'grogne', tu: 'grognes', il: 'grogne', elle: 'grogne', nous: 'grognons', vous: 'grognez', ils: 'grognent', elles: 'grognent' };
+                return forms[person] || infinitif;
+            }
+            if (infinitif === 'mordre') {
+                const forms = { je: 'mords', tu: 'mords', il: 'mord', elle: 'mord', nous: 'mordons', vous: 'mordez', ils: 'mordent', elles: 'mordent' };
+                return forms[person] || infinitif;
+            }
+            if (infinitif === 'danser') {
+                if (tense === 'présent') {
+                    const forms = { je: 'danse', tu: 'danses', il: 'danse', elle: 'danse', nous: 'dansons', vous: 'dansez', ils: 'dansent', elles: 'dansent' };
+                    return forms[person] || infinitif;
+                }
+                if (tense === 'futur') {
+                    const forms = { je: 'danserai', tu: 'danseras', il: 'dansera', elle: 'dansera', nous: 'danserons', vous: 'danserez', ils: 'danseront', elles: 'danseront' };
+                    return forms[person] || infinitif;
+                }
+                if (tense === 'imparfait') {
+                    const forms = { je: 'dansais', tu: 'dansais', il: 'dansait', elle: 'dansait', nous: 'dansions', vous: 'dansiez', ils: 'dansaient', elles: 'dansaient' };
+                    return forms[person] || infinitif;
+                }
+            }
+            if (infinitif === 'savoir') {
+                const forms = { je: 'sais', tu: 'sais', il: 'sait', elle: 'sait', nous: 'savons', vous: 'savez', ils: 'savent', elles: 'savent' };
+                return forms[person] || infinitif;
+            }
+            
+            // Nouveaux verbes - conjugaisons automatiques simplifiées
+            if (infinitif === 'attaquer') {
+                const forms = { je: 'attaque', tu: 'attaques', il: 'attaque', elle: 'attaque', nous: 'attaquons', vous: 'attaquez', ils: 'attaquent', elles: 'attaquent' };
+                return forms[person] || infinitif;
+            }
+            if (infinitif === 'suivre') {
+                const forms = { je: 'suis', tu: 'suis', il: 'suit', elle: 'suit', nous: 'suivons', vous: 'suivez', ils: 'suivent', elles: 'suivent' };
+                return forms[person] || infinitif;
+            }
+            if (infinitif === 'être') {
+                const forms = { je: 'suis', tu: 'es', il: 'est', elle: 'est', nous: 'sommes', vous: 'êtes', ils: 'sont', elles: 'sont' };
+                return forms[person] || infinitif;
+            }
+            if (infinitif === 'voir') {
+                const forms = { je: 'vois', tu: 'vois', il: 'voit', elle: 'voit', nous: 'voyons', vous: 'voyez', ils: 'voient', elles: 'voient' };
+                return forms[person] || infinitif;
+            }
+            if (infinitif === 'aller') {
+                const forms = { je: 'vais', tu: 'vas', il: 'va', elle: 'va', nous: 'allons', vous: 'allez', ils: 'vont', elles: 'vont' };
+                return forms[person] || infinitif;
+            }
+            
+            // Conjugaisons automatiques pour les autres verbes en -er
+            if (infinitif.endsWith('er')) {
+                const radical = infinitif.slice(0, -2);
+                const endings = { je: 'e', tu: 'es', il: 'e', elle: 'e', nous: 'ons', vous: 'ez', ils: 'ent', elles: 'ent' };
+                return radical + (endings[person] || '');
+            }
+            
+            return infinitif;
+        }
+
+        function conjugateNilfgaardian(infinitif, person, tense = 'présent') {
+            const verb = verbs[infinitif];
+            if (!verb) return infinitif;
+            
+            if ((person === 'il' || person === 'elle') && tense === 'présent') {
+                return infinitif;
+            }
+            
+            const ending = nilf_endings[tense] ? nilf_endings[tense][person] : '';
+            return verb.radical + ending;
+        }
+
+        function findFrenchVerb(conjugatedForm) {
+            for (const [infinitif, verbData] of Object.entries(verbs)) {
+                for (const tense of ['présent', 'futur', 'imparfait']) {
+                    for (const person of ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles']) {
+                        const frenchForm = conjugateFrench(verbData.fr, person, tense);
+                        if (frenchForm === conjugatedForm) {
+                            return { infinitif: verbData.fr, person: person, nilfInfinitif: infinitif, tense: tense };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        function detectSubject(words, direction) {
+            if (direction === 'french-to-conlang') {
+                const pronouns = ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles'];
+                for (const word of words) {
+                    if (pronouns.includes(word)) {
+                        return { person: word, source: 'pronoun' };
+                    }
+                }
+                
+                for (const word of words) {
+                    const noun = Object.values(nouns).find(n => n.fr === word);
+                    if (noun) {
+                        return { person: noun.gender_conlang === 'm' ? 'il' : 'elle', source: 'noun', noun: word };
+                    }
+                }
+                
+                for (const word of words) {
+                    const verbInfo = findFrenchVerb(word);
+                    if (verbInfo) {
+                        return { person: verbInfo.person, source: 'verb', verb: word };
+                    }
+                }
+            } else {
+                for (const word of words) {
+                    const noun = nouns[word];
+                    if (noun) {
+                        return { person: noun.gender_fr === 'm' ? 'il' : 'elle', source: 'noun', noun: word };
+                    }
+                }
+            }
+            
+            return { person: 'il', source: 'default' };
+        }
+
+        // Détection des temps composés
+        function detectCompoundTense(words) {
+            let result = [];
+            let i = 0;
+            
+            while (i < words.length) {
+                if (['ai', 'as', 'a', 'avons', 'avez', 'ont'].includes(words[i])) {
+                    if (i + 1 < words.length) {
+                        result.push({ type: 'passé_composé', auxiliary: words[i], verb: words[i + 1], span: 2 });
+                        i += 2;
+                        continue;
+                    }
+                }
+                
+                if (['vais', 'vas', 'va', 'allons', 'allez', 'vont'].includes(words[i])) {
+                    if (i + 1 < words.length) {
+                        const nextWord = words[i + 1];
+                        if (nextWord.endsWith('er') || nextWord.endsWith('ir') || nextWord.endsWith('re')) {
+                            result.push({ type: 'futur_proche', auxiliary: words[i], verb: words[i + 1], span: 2 });
+                            i += 2;
+                            continue;
+                        }
+                    }
+                }
+                
+                result.push({ type: 'normal', word: words[i], span: 1 });
+                i++;
+            }
+            
+            return result;
+        }
+
+        function getParticiple(infinitive) {
+            const irregulars = { 'prendre': 'pris', 'faire': 'fait', 'dire': 'dit', 'voir': 'vu', 'savoir': 'su' };
+            if (irregulars[infinitive]) return irregulars[infinitive];
+            if (infinitive.endsWith('er')) return infinitive.slice(0, -2) + 'é';
+            if (infinitive.endsWith('ir')) return infinitive.slice(0, -2) + 'i';
+            return infinitive + 'é';
+        }
+
+        function participleToInfinitive(participle) {
+            if (participle.endsWith('é')) return participle.slice(0, -1) + 'er';
+            const irregulars = { 'pris': 'prendre', 'fait': 'faire', 'dit': 'dire', 'vu': 'voir', 'su': 'savoir' };
+            return irregulars[participle] || participle;
+        }
+
+        // Traduction nilfgaardien → français
+        function translateToFrench(text) {
+            const words = text.split(/\s+/);
+            const { person: subject } = detectSubject(words, 'conlang-to-french');
+            
+            let translation = [];
+            let analysis = [];
+            let grammarNotes = [];
+            
+            let processedWords = [];
+            let i = 0;
+            while (i < words.length) {
+                if (i < words.length - 1 && words[i + 1] === 'nork') {
+                    processedWords.push({ word: words[i], negated: true });
+                    i += 2;
+                } else {
+                    processedWords.push({ word: words[i], negated: false });
+                    i++;
+                }
+            }
+            
+            let skipNext = false;
+            processedWords.forEach(({ word, negated }, index) => {
+                if (skipNext) { skipNext = false; return; }
+                
+                if (word === 'vaar' && index + 1 < processedWords.length && verbs[processedWords[index + 1].word]) {
+                    const nextWord = processedWords[index + 1].word;
+                    const verb = verbs[nextWord];
+                    const participle = getParticiple(verb.fr);
+                    let frenchForm = `a ${participle}`;
+                    if (negated) frenchForm = `n'a pas ${participle}`;
+                    
+                    translation.push(frenchForm);
+                    analysis.push({ original: `${word} ${nextWord}`, translation: frenchForm, type: 'passé_composé' });
+                    skipNext = true;
+                    return;
+                }
+                
+                if (word === 'voor' && index + 1 < processedWords.length && verbs[processedWords[index + 1].word]) {
+                    const nextWord = processedWords[index + 1].word;
+                    const verb = verbs[nextWord];
+                    let frenchForm = `va ${verb.fr}`;
+                    if (negated) frenchForm = `ne va pas ${verb.fr}`;
+                    
+                    translation.push(frenchForm);
+                    analysis.push({ original: `${word} ${nextWord}`, translation: frenchForm, type: 'futur_proche' });
+                    skipNext = true;
+                    return;
+                }
+                
+                if (basicLexicon[word]) {
+                    translation.push(basicLexicon[word].fr);
+                    analysis.push({ original: word, translation: basicLexicon[word].fr, type: basicLexicon[word].type });
+                    return;
+                }
+                
+                if (nouns[word]) {
+                    translation.push(nouns[word].fr);
+                    analysis.push({ original: word, translation: nouns[word].fr, type: 'nom' });
+                    return;
+                }
+                
+                if (verbs[word]) {
+                    let frenchForm = conjugateFrench(verbs[word].fr, subject, 'présent');
+                    if (negated) {
+                        frenchForm = 'ne ' + frenchForm + ' pas';
+                        grammarNotes.push(`Négation appliquée à "${word}"`);
+                    }
+                    translation.push(frenchForm);
+                    analysis.push({ original: word + (negated ? ' nork' : ''), translation: frenchForm, type: 'verbe (' + subject + ', présent)' });
+                    return;
+                }
+                
+                translation.push(`[${word}]`);
+                analysis.push({ original: word, translation: `[inconnu]`, type: 'inconnu' });
+            });
+            
+            return { translation: translation.join(' '), analysis, grammar: grammarNotes };
+        }
+
+        // Traduction français → nilfgaardien
+        function translateToConlang(text) {
+            const words = text.toLowerCase().split(/\s+/);
+            const { person: subject, source } = detectSubject(words, 'french-to-conlang');
+            
+            let translation = [];
+            let analysis = [];
+            let grammarNotes = [];
+            
+            if (source === 'pronoun') grammarNotes.push(`Pronom "${subject}" détecté`);
+            
+            const compoundTenses = detectCompoundTense(words);
+            
+            compoundTenses.forEach(item => {
+                if (item.type === 'passé_composé') {
+                    const infinitive = participleToInfinitive(item.verb);
+                    const nilfInfinitive = Object.keys(verbs).find(key => verbs[key].fr === infinitive);
+                    
+                    if (nilfInfinitive) {
+                        translation.push(`vaar ${nilfInfinitive}`);
+                        analysis.push({ original: `${item.auxiliary} ${item.verb}`, translation: `vaar ${nilfInfinitive}`, type: 'passé_composé' });
+                        grammarNotes.push(`Passé composé détecté: "${item.auxiliary} ${item.verb}" → vaar + infinitif`);
+                    } else {
+                        translation.push(`vaar [${item.verb}]`);
+                        analysis.push({ original: `${item.auxiliary} ${item.verb}`, translation: `vaar [${item.verb}]`, type: 'passé_composé (verbe inconnu)' });
+                    }
+                } else if (item.type === 'futur_proche') {
+                    const nilfInfinitive = Object.keys(verbs).find(key => verbs[key].fr === item.verb);
+                    
+                    if (nilfInfinitive) {
+                        translation.push(`voor ${nilfInfinitive}`);
+                        analysis.push({ original: `${item.auxiliary} ${item.verb}`, translation: `voor ${nilfInfinitive}`, type: 'futur_proche' });
+                        grammarNotes.push(`Futur proche détecté: "${item.auxiliary} ${item.verb}" → voor + infinitif`);
+                    } else {
+                        translation.push(`voor [${item.verb}]`);
+                        analysis.push({ original: `${item.auxiliary} ${item.verb}`, translation: `voor [${item.verb}]`, type: 'futur_proche (verbe inconnu)' });
+                    }
+                } else {
+                    const word = item.word;
+                    
+                    const basicEntry = Object.keys(basicLexicon).find(key => basicLexicon[key].fr === word);
+                    if (basicEntry) {
+                        translation.push(basicEntry);
+                        analysis.push({ original: word, translation: basicEntry, type: basicLexicon[basicEntry].type });
+                        return;
+                    }
+                    
+                    const nounEntry = Object.keys(nouns).find(key => nouns[key].fr === word);
+                    if (nounEntry) {
+                        translation.push(nounEntry);
+                        analysis.push({ original: word, translation: nounEntry, type: 'nom' });
+                        return;
+                    }
+                    
+                    const verbEntry = findFrenchVerb(word);
+                    if (verbEntry) {
+                        const nilfForm = conjugateNilfgaardian(verbEntry.nilfInfinitif, subject, verbEntry.tense);
+                        translation.push(nilfForm);
+                        analysis.push({ original: word, translation: nilfForm, type: 'verbe (' + subject + ', ' + verbEntry.tense + ')' });
+                        grammarNotes.push(`Verbe "${word}" conjugué pour "${subject}" au ${verbEntry.tense}`);
+                        return;
+                    }
+                    
+                    translation.push(`[${word}]`);
+                    analysis.push({ original: word, translation: `[inconnu]`, type: 'inconnu' });
+                }
+            });
+            
+            return { translation: translation.join(' '), analysis, grammar: grammarNotes };
+        }
+
+        // Interface
+        function swapLanguages() {
+            const inputLabel = document.getElementById('input-label');
+            const outputLabel = document.getElementById('output-label');
+            const inputText = document.getElementById('input-text');
+            const outputText = document.getElementById('output-text');
+            
+            [inputLabel.textContent, outputLabel.textContent] = [outputLabel.textContent, inputLabel.textContent];
+            [inputText.value, outputText.value] = [outputText.value, inputText.value];
+            
+            currentDirection = currentDirection === 'conlang-to-french' ? 'french-to-conlang' : 'conlang-to-french';
+            document.querySelectorAll('.lang-option').forEach(btn => btn.classList.toggle('active'));
+        }
+
+        function translate() {
+            const inputText = document.getElementById('input-text').value.trim();
+            const outputText = document.getElementById('output-text');
+            const analysis = document.getElementById('analysis');
+            
+            if (!inputText) return;
+
+            let result;
+            if (currentDirection === 'conlang-to-french') {
+                result = translateToFrench(inputText);
+            } else {
+                result = translateToConlang(inputText);
+            }
+            
+            outputText.value = result.translation;
+            showAnalysis(result.analysis, result.grammar);
+            analysis.style.display = 'block';
+        }
+
+        function showAnalysis(analysisData, grammarNotes) {
+            const wordAnalysis = document.getElementById('word-analysis');
+            const grammarDiv = document.getElementById('grammar-notes');
+            
+            wordAnalysis.innerHTML = '';
+            analysisData.forEach(item => {
+                const tag = document.createElement('div');
+                tag.className = 'word-tag';
+                tag.innerHTML = `<strong>${item.original}</strong> → ${item.translation} <em>(${item.type})</em>`;
+                wordAnalysis.appendChild(tag);
+            });
+
+            grammarDiv.innerHTML = grammarNotes ? 
+                grammarNotes.map(note => `<div>📝 ${note}</div>`).join('') : '';
+        }
+
+        function loadDictionary() {
+            const dictContent = document.getElementById('dictionary-content');
+            
+            Object.keys(basicLexicon).forEach(word => {
+                const entry = document.createElement('div');
+                entry.className = 'dict-entry';
+                entry.innerHTML = `<strong>${word}</strong> → ${basicLexicon[word].fr} <em>(${basicLexicon[word].type})</em>`;
+                dictContent.appendChild(entry);
+            });
+            
+            ['vaar', 'voor'].forEach(word => {
+                const entry = document.createElement('div');
+                entry.className = 'dict-entry';
+                entry.innerHTML = `<strong>${word}</strong> → ${word === 'vaar' ? 'passé composé' : 'futur proche'} <em>(auxiliaire)</em>`;
+                dictContent.appendChild(entry);
+            });
+            
+            Object.keys(nouns).forEach(word => {
+                const entry = document.createElement('div');
+                entry.className = 'dict-entry';
+                entry.innerHTML = `<strong>${word}</strong> → ${nouns[word].fr} <em>(nom)</em>`;
+                dictContent.appendChild(entry);
+            });
+            
+            Object.keys(verbs).forEach(word => {
+                const entry = document.createElement('div');
+                entry.className = 'dict-entry';
+                entry.innerHTML = `<strong>${word}</strong> → ${verbs[word].fr} <em>(verbe, radical: ${verbs[word].radical})</em>`;
+                dictContent.appendChild(entry);
+            });
+        }
+
+        window.onload = function() {
+            loadDictionary();
+            translate();
+        };
+
+        document.getElementById('input-text').addEventListener('input', function() {
+            setTimeout(translate, 300);
+        });
+
+        window.addVerb = function(nilfInfinitif, radical, frenchInfinitif) {
+            verbs[nilfInfinitif] = { radical, fr: frenchInfinitif };
+            loadDictionary();
+            console.log(`Verbe ajouté: ${nilfInfinitif} (${radical}) → ${frenchInfinitif}`);
+        };
+
+        window.addNoun = function(nilfWord, frenchWord, genderFr, genderNilf) {
+            nouns[nilfWord] = { fr: frenchWord, gender_fr: genderFr, gender_conlang: genderNilf };
+            loadDictionary();
+            console.log(`Nom ajouté: ${nilfWord} → ${frenchWord}`);
+        };
+    </script>
+</body>
+</html>
