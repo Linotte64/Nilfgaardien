@@ -469,28 +469,31 @@
                     return;
                 }
                 
-                if (basicLexicon[word]) {
-                    translation.push(basicLexicon[word].fr);
-                    analysis.push({ original: word, translation: basicLexicon[word].fr, type: basicLexicon[word].type });
-                    return;
-                }
+                const basicEntry = Object.keys(basicLexicon).find(key => key.toLowerCase() === word.toLowerCase());
+if (basicEntry) {
+    translation.push(basicLexicon[basicEntry].fr);
+    analysis.push({ original: word, translation: basicLexicon[basicEntry].fr, type: basicLexicon[basicEntry].type });
+    return;
+}
                 
-                if (nouns[word]) {
-                    translation.push(nouns[word].fr);
-                    analysis.push({ original: word, translation: nouns[word].fr, type: 'nom' });
-                    return;
-                }
+                const nounEntry = Object.keys(nouns).find(key => key.toLowerCase() === word.toLowerCase());
+if (nounEntry) {
+    translation.push(nouns[nounEntry].fr);
+    analysis.push({ original: word, translation: nouns[nounEntry].fr, type: 'nom' });
+    return;
+}
                 
-                if (verbs[word]) {
-                    let frenchForm = conjugateFrench(verbs[word].fr, subject, 'présent');
-                    if (negated) {
-                        frenchForm = 'ne ' + frenchForm + ' pas';
-                        grammarNotes.push(`Négation appliquée à "${word}"`);
-                    }
-                    translation.push(frenchForm);
-                    analysis.push({ original: word + (negated ? ' nork' : ''), translation: frenchForm, type: 'verbe (' + subject + ', présent)' });
-                    return;
-                }
+              const verbEntry = Object.keys(verbs).find(key => key.toLowerCase() === word.toLowerCase());
+if (verbEntry) {
+    let frenchForm = conjugateFrench(verbs[verbEntry].fr, subject, 'présent');
+    if (negated) {
+        frenchForm = 'ne ' + frenchForm + ' pas';
+        grammarNotes.push(`Négation appliquée à "${word}"`);
+    }
+    translation.push(frenchForm);
+    analysis.push({ original: word + (negated ? ' nork' : ''), translation: frenchForm, type: 'verbe (' + subject + ', présent)' });
+    return;
+}
                 
                 translation.push(`[${word}]`);
                 analysis.push({ original: word, translation: `[inconnu]`, type: 'inconnu' });
