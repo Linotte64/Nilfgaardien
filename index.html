@@ -548,138 +548,143 @@ function translateToConlang(text) {
     
     return { translation: translation.join(' '), analysis, grammar: grammarNotes };
 }
-            const { person: subject } = detectSubject(words, 'conlang-to-french');
+            // Traduction nilfgaardien → français
+function translateToFrench(text) {
+    const words = text.split(/\s+/);
+    
+    // D'abord chercher les expressions composées dans le texte original
+    const compoundMatches = [];
+    const textLower = text.toLowerCase();
+    
+    // Chercher toutes les expressions dans basicLexicon et nouns
+    const allExpressions = [];
+    Object.keys(basicLexicon).forEach(key => {
+        if (key.includes(' ') || key.includes('\'')) {
+            allExpressions.push({ key: key, translation: basicLexicon[key].fr, type: basicLexicon[key].type });
+        }
+    });
+    Object.keys(nouns).forEach(key => {
+        if (key.includes(' ') || key.includes('\'')) {
+            allExpressions.push({ key: key, translation: nouns[key].fr, type: 'nom' });
+        }
+    });
+    
+    // Trier par longueur décroissante
+    allExpressions.sort((a, b) => b.key.length - a.key.length);
+    
+    // Marquer les expressions trouvées
+    allExpressions.forEach(expr => {
+        const index = textLower.indexOf(expr.key.toLowerCase());
+        if (index !== -1) {
+            const before = index === 0 || /\s/.test(textLower[index - 1]);
+            const after = index + expr.key.length === textLower.length || /\s/.test(textLower[index + expr.key.length]);
             
-            let translation = [];
-            let analysis = [];
-            let grammarNotes = [];
-            
-            let processedWords = [];
-            let i = 0;
-            while (i < words.length) {
-                if (i < words.length - 1 && words[i + 1] === 'nork') {
-                    processedWords.push({ word: words[i], negated: true });
-                    i += 2;
-                } else {
-                    processedWords.push({ word: words[i], negated: false });
-                    i++;
-                }
+            if (before && after) {
+                compoundMatches.push({
+                    start: index,
+                    end: index + expr.key.length,
+                    original: text.substring(index, index + expr.key.length),
+                    translation: expr.translation,
+                    type: expr.type
+                });
             }
-            
-            let skipNext = false;
-            // D'abord chercher les expressions composées dans le texte original
-const compoundMatches = [];
-const textLower = text.toLowerCase();
-
-// Chercher toutes les expressions dans basicLexicon et nouns
-const allExpressions = [];
-Object.keys(basicLexicon).forEach(key => {
-    if (key.includes(' ') || key.includes('\'')) {
-        allExpressions.push({ key: key, translation: basicLexicon[key].fr, type: basicLexicon[key].type });
-    }
-});
-Object.keys(nouns).forEach(key => {
-    if (key.includes(' ') || key.includes('\'')) {
-        allExpressions.push({ key: key, translation: nouns[key].fr, type: 'nom' });
-    }
-});
-
-// Trier par longueur décroissante
-allExpressions.sort((a, b) => b.key.length - a.key.length);
-
-// Marquer les expressions trouvées
-allExpressions.forEach(expr => {
-    const index = textLower.indexOf(expr.key.toLowerCase());
-    if (index !== -1) {
-        const before = index === 0 || /\s/.test(textLower[index - 1]);
-        const after = index + expr.key.length === textLower.length || /\s/.test(textLower[index + expr.key.length]);
-        
-        if (before && after) {
-            compoundMatches.push({
-                start: index,
-                end: index + expr.key.length,
-                original: text.substring(index, index + expr.key.length),
-                translation: expr.translation,
-                type: expr.type
+        }
+    });
+    
+    // Si on a trouvé des expressions composées, les traiter en priorité
+    if (compoundMatches.length > 0) {
+        let translation = [];
+        let analysis = [];
+        compoundMatches.forEach(match => {
+            translation.push(match.translation);
+            analysis.push({
+                original: match.original,
+                translation: match.translation,
+                type: match.type + ' (expression composée)'
             });
+        });
+        return { translation: translation.join(' '), analysis, grammar: [] };
+    }
+
+    // Sinon, traiter mot par mot
+    const { person: subject } = detectSubject(words, 'conlang-to-french');
+    let translation = [];
+    let analysis = [];
+    let grammarNotes = [];
+    
+    let processedWords = [];
+    let i = 0;
+    while (i < words.length) {
+        if (i < words.length - 1 && words[i + 1] === 'nork') {
+            processedWords.push({ word: words[i], negated: true });
+            i += 2;
+        } else {
+            processedWords.push({ word: words[i], negated: false });
+            i++;
         }
     }
-});
-
-// Si on a trouvé des expressions composées, les traiter en priorité
-if (compoundMatches.length > 0) {
-    compoundMatches.forEach(match => {
-        translation.push(match.translation);
-        analysis.push({ 
-            original: match.original, 
-            translation: match.translation, 
-            type: match.type + ' (expression composée)' 
-        });
+    
+    let skipNext = false;
+    processedWords.forEach(({ word, negated }, index) => {
+        if (skipNext) { skipNext = false; return; }
+        
+        if (word === 'vaar' && index + 1 < processedWords.length && verbs[processedWords[index + 1].word]) {
+            const nextWord = processedWords[index + 1].word;
+            const verb = verbs[nextWord];
+            const participle = getParticiple(verb.fr);
+            let frenchForm = `a ${participle}`;
+            if (negated) frenchForm = `n'a pas ${participle}`;
+            
+            translation.push(frenchForm);
+            analysis.push({ original: `${word} ${nextWord}`, translation: frenchForm, type: 'passé_composé' });
+            skipNext = true;
+            return;
+        }
+        
+        if (word === 'voor' && index + 1 < processedWords.length && verbs[processedWords[index + 1].word]) {
+            const nextWord = processedWords[index + 1].word;
+            const verb = verbs[nextWord];
+            let frenchForm = `va ${verb.fr}`;
+            if (negated) frenchForm = `ne va pas ${verb.fr}`;
+            
+            translation.push(frenchForm);
+            analysis.push({ original: `${word} ${nextWord}`, translation: frenchForm, type: 'futur_proche' });
+            skipNext = true;
+            return;
+        }
+        
+        const basicEntry = Object.keys(basicLexicon).find(key => key.toLowerCase() === word.toLowerCase());
+        if (basicEntry) {
+            translation.push(basicLexicon[basicEntry].fr);
+            analysis.push({ original: word, translation: basicLexicon[basicEntry].fr, type: basicLexicon[basicEntry].type });
+            return;
+        }
+        
+        const nounEntry = Object.keys(nouns).find(key => key.toLowerCase() === word.toLowerCase());
+        if (nounEntry) {
+            translation.push(nouns[nounEntry].fr);
+            analysis.push({ original: word, translation: nouns[nounEntry].fr, type: 'nom' });
+            return;
+        }
+        
+        const verbEntry = Object.keys(verbs).find(key => key.toLowerCase() === word.toLowerCase());
+        if (verbEntry) {
+            let frenchForm = conjugateFrench(verbs[verbEntry].fr, subject, 'présent');
+            if (negated) {
+                frenchForm = 'ne ' + frenchForm + ' pas';
+                grammarNotes.push(`Négation appliquée à "${word}"`);
+            }
+            translation.push(frenchForm);
+            analysis.push({ original: word + (negated ? ' nork' : ''), translation: frenchForm, type: 'verbe (' + subject + ', présent)' });
+            return;
+        }
+        
+        translation.push(`[${word}]`);
+        analysis.push({ original: word, translation: `[inconnu]`, type: 'inconnu' });
     });
+    
     return { translation: translation.join(' '), analysis, grammar: grammarNotes };
 }
-
-processedWords.forEach(({ word, negated }) => {
-    if (skipNext) { skipNext = false; return; }
-                
-                if (word === 'vaar' && index + 1 < processedWords.length && verbs[processedWords[index + 1].word]) {
-                    const nextWord = processedWords[index + 1].word;
-                    const verb = verbs[nextWord];
-                    const participle = getParticiple(verb.fr);
-                    let frenchForm = `a ${participle}`;
-                    if (negated) frenchForm = `n'a pas ${participle}`;
-                    
-                    translation.push(frenchForm);
-                    analysis.push({ original: `${word} ${nextWord}`, translation: frenchForm, type: 'passé_composé' });
-                    skipNext = true;
-                    return;
-                }
-                
-                if (word === 'voor' && index + 1 < processedWords.length && verbs[processedWords[index + 1].word]) {
-                    const nextWord = processedWords[index + 1].word;
-                    const verb = verbs[nextWord];
-                    let frenchForm = `va ${verb.fr}`;
-                    if (negated) frenchForm = `ne va pas ${verb.fr}`;
-                    
-                    translation.push(frenchForm);
-                    analysis.push({ original: `${word} ${nextWord}`, translation: frenchForm, type: 'futur_proche' });
-                    skipNext = true;
-                    return;
-                }
-                
-                const basicEntry = Object.keys(basicLexicon).find(key => key.toLowerCase() === word.toLowerCase());
-if (basicEntry) {
-    translation.push(basicLexicon[basicEntry].fr);
-    analysis.push({ original: word, translation: basicLexicon[basicEntry].fr, type: basicLexicon[basicEntry].type });
-    return;
-}
-                
-                const nounEntry = Object.keys(nouns).find(key => key.toLowerCase() === word.toLowerCase());
-if (nounEntry) {
-    translation.push(nouns[nounEntry].fr);
-    analysis.push({ original: word, translation: nouns[nounEntry].fr, type: 'nom' });
-    return;
-}
-                
-              const verbEntry = Object.keys(verbs).find(key => key.toLowerCase() === word.toLowerCase());
-if (verbEntry) {
-    let frenchForm = conjugateFrench(verbs[verbEntry].fr, subject, 'présent');
-    if (negated) {
-        frenchForm = 'ne ' + frenchForm + ' pas';
-        grammarNotes.push(`Négation appliquée à "${word}"`);
-    }
-    translation.push(frenchForm);
-    analysis.push({ original: word + (negated ? ' nork' : ''), translation: frenchForm, type: 'verbe (' + subject + ', présent)' });
-    return;
-}
-                
-                translation.push(`[${word}]`);
-                analysis.push({ original: word, translation: `[inconnu]`, type: 'inconnu' });
-            });
-            
-            return { translation: translation.join(' '), analysis, grammar: grammarNotes };
-        }
-
         // Traduction français → nilfgaardien
         function translateToConlang(text) {
             const words = text.toLowerCase().split(/\s+/);
