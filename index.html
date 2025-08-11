@@ -251,43 +251,57 @@
             imparfait: { 'je': 'ien', 'tu': 'ias', 'il': 'ier', 'elle': 'ier', 'nous': 'iavem', 'vous': 'iavel', 'ils': 'iarn', 'elles': 'iarn' }
         };
 
+// GROUPES DE VERBES FRANÇAIS
+const frenchVerbGroups = {
+    // 1er groupe (-er) - terminaisons régulières
+    group1: {
+        endings: { je: 'e', tu: 'es', il: 'e', elle: 'e', nous: 'ons', vous: 'ez', ils: 'ent', elles: 'ent' },
+        verbs: ['danser', 'attaquer', 'chercher', 'regarder', 'provoquer', 'espérer', 'conspirer', 'rengainer']
+    },
+    
+    // 2ème groupe (-ir réguliers)
+    group2: {
+        endings: { je: 'is', tu: 'is', il: 'it', elle: 'it', nous: 'issons', vous: 'issez', ils: 'issent', elles: 'issent' },
+        verbs: []
+    },
+    
+    // 3ème groupe (-ir irréguliers, -oir, -re)
+    group3: {
+        // Pas de terminaisons fixes, chaque verbe est défini individuellement
+        verbs: ['servir', 'tenir', 'mourir', 'voir', 'suivre', 'mordre']
+    },
+    
+    // Verbes complètement irréguliers
+    irregular: {
+        verbs: ['être', 'avoir', 'aller', 'faire', 'dire', 'savoir', 'grogner']
+    }
+};
+
         // Conjugaisons françaises simplifiées mais complètes
         function conjugateFrench(infinitif, person, tense = 'présent') {
-            // Cas spéciaux existants
+    // Vérifier dans quel groupe est le verbe
+    for (const [groupName, groupData] of Object.entries(frenchVerbGroups)) {
+        if (groupData.verbs && groupData.verbs.includes(infinitif)) {
+            
+            // Groupe 1 (verbes en -er réguliers)
+            if (groupName === 'group1') {
+                const radical = infinitif.slice(0, -2);
+                return radical + (groupData.endings[person] || '');
+            }
+            
+            // Groupe 2 (verbes en -ir réguliers)
+            if (groupName === 'group2') {
+                const radical = infinitif.slice(0, -2);
+                return radical + (groupData.endings[person] || '');
+            }
+            
+            // Groupe 3 et irréguliers - cas par cas
             if (infinitif === 'grogner') {
                 const forms = { je: 'grogne', tu: 'grognes', il: 'grogne', elle: 'grogne', nous: 'grognons', vous: 'grognez', ils: 'grognent', elles: 'grognent' };
                 return forms[person] || infinitif;
             }
             if (infinitif === 'mordre') {
                 const forms = { je: 'mords', tu: 'mords', il: 'mord', elle: 'mord', nous: 'mordons', vous: 'mordez', ils: 'mordent', elles: 'mordent' };
-                return forms[person] || infinitif;
-            }
-            if (infinitif === 'danser') {
-                if (tense === 'présent') {
-                    const forms = { je: 'danse', tu: 'danses', il: 'danse', elle: 'danse', nous: 'dansons', vous: 'dansez', ils: 'dansent', elles: 'dansent' };
-                    return forms[person] || infinitif;
-                }
-                if (tense === 'futur') {
-                    const forms = { je: 'danserai', tu: 'danseras', il: 'dansera', elle: 'dansera', nous: 'danserons', vous: 'danserez', ils: 'danseront', elles: 'danseront' };
-                    return forms[person] || infinitif;
-                }
-                if (tense === 'imparfait') {
-                    const forms = { je: 'dansais', tu: 'dansais', il: 'dansait', elle: 'dansait', nous: 'dansions', vous: 'dansiez', ils: 'dansaient', elles: 'dansaient' };
-                    return forms[person] || infinitif;
-                }
-            }
-            if (infinitif === 'savoir') {
-                const forms = { je: 'sais', tu: 'sais', il: 'sait', elle: 'sait', nous: 'savons', vous: 'savez', ils: 'savent', elles: 'savent' };
-                return forms[person] || infinitif;
-            }
-            
-            // Nouveaux verbes - conjugaisons automatiques simplifiées
-            if (infinitif === 'attaquer') {
-                const forms = { je: 'attaque', tu: 'attaques', il: 'attaque', elle: 'attaque', nous: 'attaquons', vous: 'attaquez', ils: 'attaquent', elles: 'attaquent' };
-                return forms[person] || infinitif;
-            }
-            if (infinitif === 'suivre') {
-                const forms = { je: 'suis', tu: 'suis', il: 'suit', elle: 'suit', nous: 'suivons', vous: 'suivez', ils: 'suivent', elles: 'suivent' };
                 return forms[person] || infinitif;
             }
             if (infinitif === 'être') {
@@ -302,24 +316,37 @@
                 const forms = { je: 'vais', tu: 'vas', il: 'va', elle: 'va', nous: 'allons', vous: 'allez', ils: 'vont', elles: 'vont' };
                 return forms[person] || infinitif;
             }
-            
-            // Conjugaisons automatiques pour les autres verbes en -er
-            if (infinitif.endsWith('er')) {
-                const radical = infinitif.slice(0, -2);
-                const endings = { je: 'e', tu: 'es', il: 'e', elle: 'e', nous: 'ons', vous: 'ez', ils: 'ent', elles: 'ent' };
-                return radical + (endings[person] || '');
+            if (infinitif === 'savoir') {
+                const forms = { je: 'sais', tu: 'sais', il: 'sait', elle: 'sait', nous: 'savons', vous: 'savez', ils: 'savent', elles: 'savent' };
+                return forms[person] || infinitif;
+            }
+            if (infinitif === 'servir') {
+                const forms = { je: 'sers', tu: 'sers', il: 'sert', elle: 'sert', nous: 'servons', vous: 'servez', ils: 'servent', elles: 'servent' };
+                return forms[person] || infinitif;
+            }
+            if (infinitif === 'tenir') {
+                const forms = { je: 'tiens', tu: 'tiens', il: 'tient', elle: 'tient', nous: 'tenons', vous: 'tenez', ils: 'tiennent', elles: 'tiennent' };
+                return forms[person] || infinitif;
+            }
+            if (infinitif === 'suivre') {
+                const forms = { je: 'suis', tu: 'suis', il: 'suit', elle: 'suit', nous: 'suivons', vous: 'suivez', ils: 'suivent', elles: 'suivent' };
+                return forms[person] || infinitif;
             }
             
+            // Si on arrive ici, le verbe est dans un groupe mais pas encore défini
             return infinitif;
         }
-
-        function conjugateNilfgaardian(infinitif, person, tense = 'présent') {
-            const verb = verbs[infinitif];
-            if (!verb) return infinitif;
-            
-            if ((person === 'il' || person === 'elle') && tense === 'présent') {
-                return infinitif;
-            }
+    }
+    
+    // Si le verbe n'est dans aucun groupe, essayer le groupe 1 par défaut pour les -er
+    if (infinitif.endsWith('er')) {
+        const radical = infinitif.slice(0, -2);
+        const endings = frenchVerbGroups.group1.endings;
+        return radical + (endings[person] || '');
+    }
+    
+    return infinitif;
+}
             
             const ending = nilf_endings[tense] ? nilf_endings[tense][person] : '';
             return verb.radical + ending;
