@@ -122,7 +122,7 @@ console.log("Script démarré");
                 'œil': 'yeux',
                 'oeil': 'yeux',
                 'cheval': 'chevaux'
-            }
+            },
             pronouns: {
     'je': { ng: 'é' },
     'tu': { ng: 'ti' },
@@ -270,7 +270,14 @@ console.log("Script démarré");
             return radical + ending;
         }
         
-        function detectSubject(words) {
+        function detectSubject(words) 
+        // Chercher d'abord les pronoms nilfgaardiens
+for (const [frPronoun, pronounData] of Object.entries(dict.pronouns)) {
+    if (words.includes(pronounData.ng)) {
+        return frPronoun;
+    }
+}
+        {
             const pronouns = ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles'];
             for (const word of words) {
                 if (pronouns.includes(word.toLowerCase())) {
