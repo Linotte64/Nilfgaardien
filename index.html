@@ -79,20 +79,19 @@
 
     <script>
         console.log("Script démarré");
-        
         // DICTIONNAIRE ENRICHI
         const dict = {
             verbs: {
-    'danser': { ng_conj: 'addan', ng_radical: 'add', ng_inf: 'addan', group: 1 },
-    'être': { ng_conj: 'ess', ng_radical: 'ess', ng_inf: 'essen', group: 'irregular' },
-    'aller': { ng_conj: 'var', ng_radical: 'var', ng_inf: 'varen', group: 'irregular' },
-    'avoir': { ng_conj: 'caerme', ng_radical: 'caer', ng_inf: 'caermen', group: 'irregular' },
-    'finir': { ng_conj: 'finar', ng_radical: 'fin', ng_inf: 'finar', group: 2 },
-    'choisir': { ng_conj: 'dewisan', ng_radical: 'dewis', ng_inf: 'dewisan', group: 2 },
-    'manger': { ng_conj: 'kroesan', ng_radical: 'kroes', ng_inf: 'kroesan', group: 1 },
-    'parler': { ng_conj: 'gwedan', ng_radical: 'gwed', ng_inf: 'gwedan', group: 1 },
-    'faire': { ng_conj: 'gwneuden', ng_radical: 'gwneud', ng_inf: 'gwneuden', group: 'irregular' }
-}
+                'danser': { ng_conj: 'addan', ng_radical: 'add', ng_inf: 'addan', group: 1 },
+                'être': { ng_conj: 'ess', ng_radical: 'ess', ng_inf: 'essen', group: 'irregular' },
+                'aller': { ng_conj: 'var', ng_radical: 'var', ng_inf: 'varen', group: 'irregular' },
+                'avoir': { ng_conj: 'caerme', ng_radical: 'caer', ng_inf: 'caermen', group: 'irregular' },
+                'finir': { ng_conj: 'finar', ng_radical: 'fin', ng_inf: 'finar', group: 2 },
+                'choisir': { ng_conj: 'dewisan', ng_radical: 'dewis', ng_inf: 'dewisan', group: 2 },
+                'manger': { ng_conj: 'kroesan', ng_radical: 'kroes', ng_inf: 'kroesan', group: 1 },
+                'parler': { ng_conj: 'gwedan', ng_radical: 'gwed', ng_inf: 'gwedan', group: 1 },
+                'faire': { ng_conj: 'gwneuden', ng_radical: 'gwneud', ng_inf: 'gwneuden', group: 'irregular' }
+            },
             nouns: {
                 'bête': { ng: 'gorval', gender_fr: 'f', gender_ng: 'm' },
                 'chat': { ng: 'mithel', gender_fr: 'm', gender_ng: 'f' },
@@ -116,17 +115,17 @@
                 'au revoir': { ng: 'va faill', gender_fr: 'm', gender_ng: 'm' }
             },
             others: {
-    'le': { ng: '', type: 'article' },
-    'la': { ng: '', type: 'article' },
-    'les': { ng: '', type: 'article' },
-    'je': { ng: 'é', type: 'pronom', show: true },
-    'tu': { ng: 'ti', type: 'pronom', show: true },
-    'il': { ng: 'ver', type: 'pronom', show: true },
-    'elle': { ng: 'vara', type: 'pronom', show: true },
-    'nous': { ng: 'ni', type: 'pronom', show: true },
-    'vous': { ng: 'chi', type: 'pronom', show: true },
-    'et': { ng: 'a', type: 'conjonction' }
-        }
+                'le': { ng: '', type: 'article' },
+                'la': { ng: '', type: 'article' },
+                'les': { ng: '', type: 'article' },
+                'je': { ng: 'é', type: 'pronom', show: true },
+                'tu': { ng: 'ti', type: 'pronom', show: true },
+                'il': { ng: 'ver', type: 'pronom', show: true },
+                'elle': { ng: 'vara', type: 'pronom', show: true },
+                'nous': { ng: 'ni', type: 'pronom', show: true },
+                'vous': { ng: 'chi', type: 'pronom', show: true },
+                'et': { ng: 'a', type: 'conjonction' }
+            },
             irregularPlurals: {
                 'œil': 'yeux',
                 'oeil': 'yeux',
@@ -178,7 +177,6 @@
         };
         
         let direction = 'fr-to-ng';
-        
         // FONCTIONS DE PLURIEL
         function makeFrenchPlural(word) {
             if (dict.irregularPlurals[word.toLowerCase()]) {
@@ -261,14 +259,14 @@
             return radical + ending;
         }
         
-        function conjugateNG(verbData.ng_radical, subject, tense) {
-    if ((person === 'il' || person === 'elle') && tense === 'présent') {
-        return infinitif;
-    }
-    
-    const ending = ngConjugations[tense]?.[person] || '';
-    return radical + ending;
-}
+        function conjugateNG(radical, person, tense = 'présent') {
+            if ((person === 'il' || person === 'elle') && tense === 'présent') {
+                return radical;
+            }
+            
+            const ending = ngConjugations[tense]?.[person] || '';
+            return radical + ending;
+        }
         
         function detectSubject(words) {
             const pronouns = ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles'];
@@ -299,137 +297,137 @@
         // TRADUCTIONS
         function translateFrToNg(text) {
             // Expressions composées (traitement partiel)
-let textToProcess = text.toLowerCase();
-let expressionAnalysis = [];
+            let textToProcess = text.toLowerCase();
+            let expressionAnalysis = [];
 
-for (const [expr, data] of Object.entries(dict.expressions)) {
-    const regex = new RegExp('\\b' + expr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
-    if (regex.test(textToProcess)) {
-        textToProcess = textToProcess.replace(regex, `|EXPR:${data.ng}|`);
-        expressionAnalysis.push({ original: expr, translation: data.ng, type: 'expression' });
-    }
-}
+            for (const [expr, data] of Object.entries(dict.expressions)) {
+                const regex = new RegExp('\\b' + expr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
+                if (regex.test(textToProcess)) {
+                    textToProcess = textToProcess.replace(regex, `|EXPR:${data.ng}|`);
+                    expressionAnalysis.push({ original: expr, translation: data.ng, type: 'expression' });
+                }
+            }
             
             const words = textToProcess.split(' ');
-const subject = detectSubject(text.toLowerCase().split(' '));
-let result = [];
-let analysis = [...expressionAnalysis];
+            const subject = detectSubject(text.toLowerCase().split(' '));
+            let result = [];
+            let analysis = [...expressionAnalysis];
             
             for (let i = 0; i < words.length; i++) {
-    let word = words[i];
-    let found = false;
-    
-    // Vérifier si c'est une expression remplacée
-    if (word.startsWith('|EXPR:') && word.endsWith('|')) {
-        result.push(word.slice(6, -1));
-        found = true;
-    }
-    
-    if (!found) {
+                let word = words[i];
+                let found = false;
                 
-                // FUTUR PROCHE (aller + infinitif → voor + infinitif)
-                if (['vais', 'vas', 'va', 'allons', 'allez', 'vont'].includes(word) && i + 1 < words.length) {
-                    const nextWord = words[i + 1];
-                    const verb = dict.verbs[nextWord];
-                    if (verb) {
-                        result.push(`voor ${verb.ng_conj}`);  // ng_conj = infinitif nilfgaardien
-                        analysis.push({
-                            original: `${word} ${nextWord}`,
-                            translation: `voor ${verb.ng_conj}`,
-                            type: 'futur proche'
-                        });
-                        i++; // Passer au mot suivant
-                        continue;
-                    }
+                // Vérifier si c'est une expression remplacée
+                if (word.startsWith('|EXPR:') && word.endsWith('|')) {
+                    result.push(word.slice(6, -1));
+                    found = true;
                 }
                 
-                // GESTION "DE + POSSESSIF" → "AEP"
-                if (word === 'de' && i + 1 < words.length) {
-                    const nextWord = words[i + 1];
-                    if (['mon', 'ton', 'son', 'sa', 'ses', 'notre', 'votre', 'leur', 'leurs'].includes(nextWord)) {
-                        result.push('aep');
-                        analysis.push({
-                            original: `${word} ${nextWord}`,
-                            translation: 'aep',
-                            type: 'de + possessif → aep'
-                        });
-                        i++; // Passer au mot suivant
-                        continue;
+                if (!found) {
+                    // FUTUR PROCHE (aller + infinitif → voor + infinitif)
+                    if (['vais', 'vas', 'va', 'allons', 'allez', 'vont'].includes(word) && i + 1 < words.length) {
+                        const nextWord = words[i + 1];
+                        const verb = dict.verbs[nextWord];
+                        if (verb) {
+                            result.push(`voor ${verb.ng_radical}`);
+                            analysis.push({
+                                original: `${word} ${nextWord}`,
+                                translation: `voor ${verb.ng_radical}`,
+                                type: 'futur proche'
+                            });
+                            i++; // Passer au mot suivant
+                            continue;
+                        }
                     }
-                }
-                
-                // Verbes (avec tous les temps)
-                for (const [frVerb, verbData] of Object.entries(dict.verbs)) {
-                    for (const tense of ['présent', 'imparfait', 'futur']) {
-                        for (const person of ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles']) {
-                            const conjugated = conjugateFrench(frVerb, person, tense);
-                            if (conjugated === word) {
-                                const ngForm = conjugateNG(verbData.ng_radical, subject, tense);
-                                result.push(ngForm);
-                                analysis.push({ 
-                                    original: word, 
-                                    translation: ngForm, 
-                                    type: `verbe (${subject}, ${tense})` 
-                                });
-                                found = true;
-                                break;
+                    
+                    // GESTION "DE + POSSESSIF" → "AEP"
+                    if (word === 'de' && i + 1 < words.length) {
+                        const nextWord = words[i + 1];
+                        if (['mon', 'ton', 'son', 'sa', 'ses', 'notre', 'votre', 'leur', 'leurs'].includes(nextWord)) {
+                            result.push('aep');
+                            analysis.push({
+                                original: `${word} ${nextWord}`,
+                                translation: 'aep',
+                                type: 'de + possessif → aep'
+                            });
+                            i++; // Passer au mot suivant
+                            continue;
+                        }
+                    }
+                    
+                    // Verbes (avec tous les temps)
+                    for (const [frVerb, verbData] of Object.entries(dict.verbs)) {
+                        for (const tense of ['présent', 'imparfait', 'futur']) {
+                            for (const person of ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles']) {
+                                const conjugated = conjugateFrench(frVerb, person, tense);
+                                if (conjugated === word) {
+                                    const ngForm = conjugateNG(verbData.ng_radical, subject, tense);
+                                    result.push(ngForm);
+                                    analysis.push({ 
+                                        original: word, 
+                                        translation: ngForm, 
+                                        type: `verbe (${subject}, ${tense})` 
+                                    });
+                                    found = true;
+                                    break;
+                                }
                             }
+                            if (found) break;
                         }
                         if (found) break;
                     }
-                    if (found) break;
-                }
-                
-                if (!found) {
-                    // Noms (singulier et pluriel)
-                    const noun = dict.nouns[word];
-                    if (noun) {
-                        result.push(noun.ng);
-                        analysis.push({ original: word, translation: noun.ng, type: 'nom (singulier)' });
-                        found = true;
-                    } else {
-                        const pluralCheck = detectFrenchPlural(word);
-                        if (pluralCheck.isPlural && dict.nouns[pluralCheck.singular]) {
-                            const singularNoun = dict.nouns[pluralCheck.singular];
-                            const ngPlural = makeNgPlural(singularNoun.ng);
-                            result.push(ngPlural);
-                            analysis.push({ 
-                                original: word, 
-                                translation: ngPlural, 
-                                type: 'nom (pluriel)' 
-                            });
+                    
+                    if (!found) {
+                        // Noms (singulier et pluriel)
+                        const noun = dict.nouns[word];
+                        if (noun) {
+                            result.push(noun.ng);
+                            analysis.push({ original: word, translation: noun.ng, type: 'nom (singulier)' });
+                            found = true;
+                        } else {
+                            const pluralCheck = detectFrenchPlural(word);
+                            if (pluralCheck.isPlural && dict.nouns[pluralCheck.singular]) {
+                                const singularNoun = dict.nouns[pluralCheck.singular];
+                                const ngPlural = makeNgPlural(singularNoun.ng);
+                                result.push(ngPlural);
+                                analysis.push({ 
+                                    original: word, 
+                                    translation: ngPlural, 
+                                    type: 'nom (pluriel)' 
+                                });
+                                found = true;
+                            }
+                        }
+                    }
+                    
+                    if (!found) {
+                        // Adjectifs
+                        const adj = dict.adjectives[word];
+                        if (adj) {
+                            result.push(adj);
+                            analysis.push({ original: word, translation: adj, type: 'adjectif' });
                             found = true;
                         }
-                }
-                
-                if (!found) {
-                    // Adjectifs
-                    const adj = dict.adjectives[word];
-                    if (adj) {
-                        result.push(adj);
-                        analysis.push({ original: word, translation: adj, type: 'adjectif' });
-                        found = true;
                     }
-                }
-                
-                if (!found) {
-                    // Autres (incluant pronoms)
-const other = dict.others[word];
-if (other && (other.ng !== '' || other.show)) {
-    if (other.ng !== '') {
-        result.push(other.ng);
-        analysis.push({ original: word, translation: other.ng, type: other.type });
-    } else {
-        analysis.push({ original: word, translation: '[ignoré]', type: other.type });
-    }
-    found = true;
-}
-                }
-                
-                if (!found) {
-                    result.push(`[${word}]`);
-                    analysis.push({ original: word, translation: '[inconnu]', type: 'inconnu' });
-                }
+                    
+                    if (!found) {
+                        // Autres (incluant pronoms)
+                        const other = dict.others[word];
+                        if (other && (other.ng !== '' || other.show)) {
+                            if (other.ng !== '') {
+                                result.push(other.ng);
+                                analysis.push({ original: word, translation: other.ng, type: other.type });
+                            } else {
+                                analysis.push({ original: word, translation: '[ignoré]', type: other.type });
+                            }
+                            found = true;
+                        }
+                    }
+                    
+                    if (!found) {
+                        result.push(`[${word}]`);
+                        analysis.push({ original: word, translation: '[inconnu]', type: 'inconnu' });
+                    }
                 }
             }
             
@@ -438,193 +436,189 @@ if (other && (other.ng !== '' || other.show)) {
                 analysis: analysis,
                 grammar: [`Sujet: ${subject}`]
             };
-        }
-        
-        function translateNgToFr(text) {
+            function translateNgToFr(text) {
             // Expressions composées (traitement partiel)
-let textToProcess = text.toLowerCase();
-let expressionAnalysis = [];
+            let textToProcess = text.toLowerCase();
+            let expressionAnalysis = [];
 
-for (const [frExpr, ngData] of Object.entries(dict.expressions)) {
-    const regex = new RegExp('\\b' + ngData.ng.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
-    if (regex.test(textToProcess)) {
-        textToProcess = textToProcess.replace(regex, `|EXPR:${frExpr}|`);
-        expressionAnalysis.push({ original: ngData.ng, translation: frExpr, type: 'expression' });
-    }
-}
-
-const words = textToProcess.split(' ');
-const subject = detectSubject(text.toLowerCase().split(' '));
-let result = [];
-let analysis = [...expressionAnalysis];
-
-for (let i = 0; i < words.length; i++) {
-    let word = words[i];
-    let found = false;
-    
-    // Vérifier si c'est une expression remplacée
-    if (word.startsWith('|EXPR:') && word.endsWith('|')) {
-        result.push(word.slice(6, -1));
-        found = true;
-    }
-    
-    if (!found) {
-                
-                // FUTUR PROCHE (voor + infinitif → aller + infinitif)
-                if (word === 'voor' && i + 1 < words.length) {
-                    const nextWord = words[i + 1];
-                    // Chercher le verbe nilfgaardien correspondant
-                    for (const [frVerb, verbData] of Object.entries(dict.verbs)) {
-                        if (verbData.ng_conj === nextWord) {  // ng_conj = infinitif nilfgaardien
-                            const allerForm = conjugateFrench('aller', subject, 'présent');
-                            result.push(`${allerForm} ${frVerb}`);
-                            analysis.push({
-                                original: `${word} ${nextWord}`,
-                                translation: `${allerForm} ${frVerb}`,
-                                type: 'futur proche'
-                            });
-                            i++; // Passer au mot suivant
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found) continue;
+            for (const [frExpr, ngData] of Object.entries(dict.expressions)) {
+                const regex = new RegExp('\\b' + ngData.ng.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
+                if (regex.test(textToProcess)) {
+                    textToProcess = textToProcess.replace(regex, `|EXPR:${frExpr}|`);
+                    expressionAnalysis.push({ original: ngData.ng, translation: frExpr, type: 'expression' });
                 }
+            }
+
+            const words = textToProcess.split(' ');
+            const subject = detectSubject(text.toLowerCase().split(' '));
+            let result = [];
+            let analysis = [...expressionAnalysis];
+
+            for (let i = 0; i < words.length; i++) {
+                let word = words[i];
+                let found = false;
                 
-                // GESTION "AEP" → Analyser le contexte pour "DE + POSSESSIF"
-                if (word === 'aep') {
-                    // Pour l'instant, traduction simple basée sur le sujet détecté
-                    let possessif = 'de ses'; // Par défaut
-                    
-                    if (subject === 'je') possessif = 'de mes';
-                    else if (subject === 'tu') possessif = 'de tes';
-                    else if (subject === 'il' || subject === 'elle') possessif = 'de ses';
-                    else if (subject === 'nous') possessif = 'de nos';
-                    else if (subject === 'vous') possessif = 'de vos';
-                    else if (subject === 'ils' || subject === 'elles') possessif = 'de leurs';
-                    
-                    // Analyser le mot suivant pour le genre/nombre si possible
-                    if (i + 1 < words.length) {
-                        const nextWord = words[i + 1];
-                        console.log(`Analyse du mot après aep: ${nextWord}`);
-                        
-                        // Vérifier si c'est un nom connu
-                        for (const [frNoun, nounData] of Object.entries(dict.nouns)) {
-                            if (nounData.ng === nextWord) {
-                                console.log(`Nom trouvé: ${frNoun}, genre: ${nounData.gender_fr}`);
-                                // Ajuster selon le genre et nombre
-                                if (subject === 'il' || subject === 'elle') {
-                                    if (nounData.gender_fr === 'm') {
-                                        possessif = 'de son';
-                                    } else {
-                                        possessif = 'de sa';
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                        
-                        // Vérifier si c'est un pluriel nilfgaardien
-                        const pluralCheck = detectNgPlural(nextWord);
-                        if (pluralCheck.isPlural) {
-                            console.log(`Pluriel détecté: ${nextWord}`);
-                            if (subject === 'il' || subject === 'elle') {
-                                possessif = 'de ses';
-                            }
-                        }
-                    }
-                    
-                    result.push(possessif);
-                    analysis.push({
-                        original: word,
-                        translation: possessif,
-                        type: `aep → ${possessif} (contexte: sujet ${subject})`
-                    });
+                // Vérifier si c'est une expression remplacée
+                if (word.startsWith('|EXPR:') && word.endsWith('|')) {
+                    result.push(word.slice(6, -1));
                     found = true;
                 }
                 
-                // Verbes conjugués
-                for (const [frVerb, verbData] of Object.entries(dict.verbs)) {
-                    for (const tense of ['présent', 'imparfait', 'futur']) {
-                        for (const person of ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles']) {
-                            const ngForm = conjugateNG(verbData.ng_radical, person, tense);
-                            if (ngForm === word) {
-                                const frForm = conjugateFrench(frVerb, subject, tense);
-                                result.push(frForm);
-                                analysis.push({ 
-                                    original: word, 
-                                    translation: frForm, 
-                                    type: `verbe (${subject}, ${tense})` 
+                if (!found) {
+                    // FUTUR PROCHE (voor + infinitif → aller + infinitif)
+                    if (word === 'voor' && i + 1 < words.length) {
+                        const nextWord = words[i + 1];
+                        // Chercher le verbe nilfgaardien correspondant
+                        for (const [frVerb, verbData] of Object.entries(dict.verbs)) {
+                            if (verbData.ng_radical === nextWord) {
+                                const allerForm = conjugateFrench('aller', subject, 'présent');
+                                result.push(`${allerForm} ${frVerb}`);
+                                analysis.push({
+                                    original: `${word} ${nextWord}`,
+                                    translation: `${allerForm} ${frVerb}`,
+                                    type: 'futur proche'
                                 });
+                                i++; // Passer au mot suivant
                                 found = true;
                                 break;
                             }
                         }
+                        if (found) continue;
+                    }
+                    
+                    // GESTION "AEP" → Analyser le contexte pour "DE + POSSESSIF"
+                    if (word === 'aep') {
+                        // Pour l'instant, traduction simple basée sur le sujet détecté
+                        let possessif = 'de ses'; // Par défaut
+                        
+                        if (subject === 'je') possessif = 'de mes';
+                        else if (subject === 'tu') possessif = 'de tes';
+                        else if (subject === 'il' || subject === 'elle') possessif = 'de ses';
+                        else if (subject === 'nous') possessif = 'de nos';
+                        else if (subject === 'vous') possessif = 'de vos';
+                        else if (subject === 'ils' || subject === 'elles') possessif = 'de leurs';
+                        
+                        // Analyser le mot suivant pour le genre/nombre si possible
+                        if (i + 1 < words.length) {
+                            const nextWord = words[i + 1];
+                            console.log(`Analyse du mot après aep: ${nextWord}`);
+                            
+                            // Vérifier si c'est un nom connu
+                            for (const [frNoun, nounData] of Object.entries(dict.nouns)) {
+                                if (nounData.ng === nextWord) {
+                                    console.log(`Nom trouvé: ${frNoun}, genre: ${nounData.gender_fr}`);
+                                    // Ajuster selon le genre et nombre
+                                    if (subject === 'il' || subject === 'elle') {
+                                        if (nounData.gender_fr === 'm') {
+                                            possessif = 'de son';
+                                        } else {
+                                            possessif = 'de sa';
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                            
+                            // Vérifier si c'est un pluriel nilfgaardien
+                            const pluralCheck = detectNgPlural(nextWord);
+                            if (pluralCheck.isPlural) {
+                                console.log(`Pluriel détecté: ${nextWord}`);
+                                if (subject === 'il' || subject === 'elle') {
+                                    possessif = 'de ses';
+                                }
+                            }
+                        }
+                        
+                        result.push(possessif);
+                        analysis.push({
+                            original: word,
+                            translation: possessif,
+                            type: `aep → ${possessif} (contexte: sujet ${subject})`
+                        });
+                        found = true;
+                    }
+                    
+                    // Verbes conjugués
+                    for (const [frVerb, verbData] of Object.entries(dict.verbs)) {
+                        for (const tense of ['présent', 'imparfait', 'futur']) {
+                            for (const person of ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles']) {
+                                const ngForm = conjugateNG(verbData.ng_radical, person, tense);
+                                if (ngForm === word) {
+                                    const frForm = conjugateFrench(frVerb, subject, tense);
+                                    result.push(frForm);
+                                    analysis.push({ 
+                                        original: word, 
+                                        translation: frForm, 
+                                        type: `verbe (${subject}, ${tense})` 
+                                    });
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (found) break;
+                        }
                         if (found) break;
                     }
-                    if (found) break;
-                }
-                
-                if (!found) {
-                    // Noms avec articles
-                    for (const [frNoun, nounData] of Object.entries(dict.nouns)) {
-                        if (nounData.ng === word) {
-                            const article = nounData.gender_fr === 'm' ? 'le ' : 'la ';
-                            result.push(article + frNoun);
-                            analysis.push({ original: word, translation: article + frNoun, type: 'nom' });
-                            found = true;
-                            break;
+                    
+                    if (!found) {
+                        // Noms avec articles
+                        for (const [frNoun, nounData] of Object.entries(dict.nouns)) {
+                            if (nounData.ng === word) {
+                                const article = nounData.gender_fr === 'm' ? 'le ' : 'la ';
+                                result.push(article + frNoun);
+                                analysis.push({ original: word, translation: article + frNoun, type: 'nom' });
+                                found = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!found) {
+                            // Pluriels NG
+                            const pluralCheck = detectNgPlural(word);
+                            if (pluralCheck.isPlural && pluralCheck.frSingular) {
+                                const frPlural = makeFrenchPlural(pluralCheck.frSingular);
+                                result.push('les ' + frPlural);
+                                analysis.push({ 
+                                    original: word, 
+                                    translation: 'les ' + frPlural, 
+                                    type: 'nom (pluriel)' 
+                                });
+                                found = true;
+                            }
                         }
                     }
                     
                     if (!found) {
-                        // Pluriels NG
-                        const pluralCheck = detectNgPlural(word);
-                        if (pluralCheck.isPlural && pluralCheck.frSingular) {
-                            const frPlural = makeFrenchPlural(pluralCheck.frSingular);
-                            result.push('les ' + frPlural);
-                            analysis.push({ 
-                                original: word, 
-                                translation: 'les ' + frPlural, 
-                                type: 'nom (pluriel)' 
-                            });
+                        // Adjectifs
+                        for (const [frAdj, ngAdj] of Object.entries(dict.adjectives)) {
+                            if (ngAdj === word) {
+                                result.push(frAdj);
+                                analysis.push({ original: word, translation: frAdj, type: 'adjectif' });
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!found) {
+                        // Autres (incluant pronoms)
+                        const other = dict.others[word];
+                        if (other && (other.ng !== '' || other.show)) {
+                            if (other.ng !== '') {
+                                result.push(other.ng);
+                                analysis.push({ original: word, translation: other.ng, type: other.type });
+                            } else {
+                                analysis.push({ original: word, translation: '[ignoré]', type: other.type });
+                            }
                             found = true;
                         }
                     }
-                }
-                
-                if (!found) {
-                    // Adjectifs
-                    for (const [frAdj, ngAdj] of Object.entries(dict.adjectives)) {
-                        if (ngAdj === word) {
-                            result.push(frAdj);
-                            analysis.push({ original: word, translation: frAdj, type: 'adjectif' });
-                            found = true;
-                            break;
-                        }
+                    
+                    if (!found) {
+                        result.push(`[${word}]`);
+                        analysis.push({ original: word, translation: '[inconnu]', type: 'inconnu' });
                     }
                 }
-                
-                if (!found) {
-                    // Autres (incluant pronoms)
-const other = dict.others[word];
-if (other && (other.ng !== '' || other.show)) {
-    if (other.ng !== '') {
-        result.push(other.ng);
-        analysis.push({ original: word, translation: other.ng, type: other.type });
-    } else {
-        analysis.push({ original: word, translation: '[ignoré]', type: other.type });
-    }
-    found = true;
-}
-                    }
-                }
-                
-                if (!found) {
-                    result.push(`[${word}]`);
-                    analysis.push({ original: word, translation: '[inconnu]', type: 'inconnu' });
-                }
-    }
             }
             
             return {
