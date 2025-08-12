@@ -721,7 +721,7 @@ function translateToFrench(text) {
         analysis.push({ original: word, translation: `[inconnu]`, type: 'inconnu' });
     });
     
-    ret//urn { translation: translation.join(' '), analysis, grammar: grammarNotes };
+    return { translation: translation.join(' '), analysis, grammar: grammarNotes };
 }
         // Interface
         function swapLanguages() {
