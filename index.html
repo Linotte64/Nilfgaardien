@@ -116,12 +116,6 @@ console.log("Script démarré");
                 'le': { ng: '', type: 'article' },
                 'la': { ng: '', type: 'article' },
                 'les': { ng: '', type: 'article' },
-                'je': { ng: 'é', type: 'pronom', show: true },
-                'tu': { ng: 'ti', type: 'pronom', show: true },
-                'il': { ng: 'ver', type: 'pronom', show: true },
-                'elle': { ng: 'vara', type: 'pronom', show: true },
-                'nous': { ng: 'ni', type: 'pronom', show: true },
-                'vous': { ng: 'chi', type: 'pronom', show: true },
                 'et': { ng: 'a', type: 'conjonction' }
             },
             irregularPlurals: {
@@ -129,6 +123,16 @@ console.log("Script démarré");
                 'oeil': 'yeux',
                 'cheval': 'chevaux'
             }
+            pronouns: {
+    'je': { ng: 'é' },
+    'tu': { ng: 'ti' },
+    'il': { ng: 'ver' },
+    'elle': { ng: 'vares' },
+    'nous': { ng: 'én' },
+    'vous': { ng: 'tin' },
+    'ils': { ng: 'vern' },
+    'elles': { ng: 'veren' }
+},
         };
         
         // CONJUGAISONS FRANÇAISES COMPLÈTES
@@ -407,6 +411,15 @@ console.log("Script démarré");
                             found = true;
                         }
                     }
+                    if (!found) {
+    // Pronoms personnels
+    const pronoun = dict.pronouns[word];
+    if (pronoun) {
+        result.push(pronoun.ng);
+        analysis.push({ original: word, translation: pronoun.ng, type: 'pronom' });
+        found = true;
+    }
+                    }
                     
                     if (!found) {
                         // Autres (incluant pronoms)
@@ -598,7 +611,17 @@ console.log("Script démarré");
                             }
                         }
                     }
-                    
+                    if (!found) {
+    // Pronoms personnels
+    for (const [frPronoun, pronounData] of Object.entries(dict.pronouns)) {
+        if (pronounData.ng === word) {
+            result.push(frPronoun);
+            analysis.push({ original: word, translation: frPronoun, type: 'pronom' });
+            found = true;
+            break;
+        }
+    }
+        }
                     if (!found) {
                         // Autres (incluant pronoms)
                         const other = dict.others[word];
