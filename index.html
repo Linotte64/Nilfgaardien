@@ -270,37 +270,38 @@ console.log("Script démarré");
             return radical + ending;
         }
         
-        function detectSubject(words) 
-        // Chercher d'abord les pronoms nilfgaardiens
-for (const [frPronoun, pronounData] of Object.entries(dict.pronouns)) {
-    if (words.includes(pronounData.ng)) {
-        return frPronoun;
+        function detectSubject(words) {
+    // Chercher d'abord les pronoms nilfgaardiens
+    for (const [frPronoun, pronounData] of Object.entries(dict.pronouns)) {
+        if (words.includes(pronounData.ng)) {
+            return frPronoun;
+        }
     }
-}
-        {
-            const pronouns = ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles'];
-            for (const word of words) {
-                if (pronouns.includes(word.toLowerCase())) {
-                    return word.toLowerCase();
-                }
+    
+    // Chercher les pronoms français
+    const pronouns = ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles'];
+    for (const word of words) {
+        if (pronouns.includes(word.toLowerCase())) {
+            return word.toLowerCase();
+        }
+    }
+    
+    // Chercher un nom pour déterminer le genre
+    for (const word of words) {
+        const noun = dict.nouns[word.toLowerCase()];
+        if (noun) {
+            return noun.gender_fr === 'm' ? 'il' : 'elle';
+        }
+        
+        // Chercher aussi dans les noms nilfgaardiens
+        for (const [frNoun, nounData] of Object.entries(dict.nouns)) {
+            if (nounData.ng.toLowerCase() === word.toLowerCase()) {
+                return nounData.gender_ng === 'm' ? 'il' : 'elle';
             }
-            
-            // Chercher un nom pour déterminer le genre
-            for (const word of words) {
-                const noun = dict.nouns[word.toLowerCase()];
-                if (noun) {
-                    return noun.gender_fr === 'm' ? 'il' : 'elle';
-                }
-                
-                // Chercher aussi dans les noms nilfgaardiens
-                for (const [frNoun, nounData] of Object.entries(dict.nouns)) {
-                    if (nounData.ng.toLowerCase() === word.toLowerCase()) {
-                        return nounData.gender_ng === 'm' ? 'il' : 'elle';
-                    }
-                }
-            }
-            
-            return 'il';
+        }
+    }
+    
+    return 'il';
         }
         
         // TRADUCTIONS
