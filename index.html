@@ -83,16 +83,16 @@
         // DICTIONNAIRE ENRICHI
         const dict = {
             verbs: {
-                'danser': { ng_conj: 'addan', ng_inf: 'add', group: 1 },
-                'être': { ng_conj: 'ess', ng_inf: 'ess', group: 'irregular' },
-                'aller': { ng_conj: 'var', ng_inf: 'var', group: 'irregular' },
-                'avoir': { ng_conj: 'caerme', ng_inf: 'caer', group: 'irregular' },
-                'finir': { ng_conj: 'finar', ng_inf: 'fin', group: 2 },
-                'choisir': { ng_conj: 'dewisan', ng_inf: 'dewis', group: 2 },
-                'manger': { ng_conj: 'kroesan', ng_inf: 'kroes', group: 1 },
-                'parler': { ng_conj: 'gwedan', ng_inf: 'gwed', group: 1 },
-                'faire': { ng_conj: 'gwneuden', ng_inf: 'gwneud', group: 'irregular' }
-            },
+    'danser': { ng_conj: 'addan', ng_radical: 'add', ng_inf: 'addan', group: 1 },
+    'être': { ng_conj: 'ess', ng_radical: 'ess', ng_inf: 'essen', group: 'irregular' },
+    'aller': { ng_conj: 'var', ng_radical: 'var', ng_inf: 'varen', group: 'irregular' },
+    'avoir': { ng_conj: 'caerme', ng_radical: 'caer', ng_inf: 'caermen', group: 'irregular' },
+    'finir': { ng_conj: 'finar', ng_radical: 'fin', ng_inf: 'finar', group: 2 },
+    'choisir': { ng_conj: 'dewisan', ng_radical: 'dewis', ng_inf: 'dewisan', group: 2 },
+    'manger': { ng_conj: 'kroesan', ng_radical: 'kroes', ng_inf: 'kroesan', group: 1 },
+    'parler': { ng_conj: 'gwedan', ng_radical: 'gwed', ng_inf: 'gwedan', group: 1 },
+    'faire': { ng_conj: 'gwneuden', ng_radical: 'gwneud', ng_inf: 'gwneuden', group: 'irregular' }
+}
             nouns: {
                 'bête': { ng: 'gorval', gender_fr: 'f', gender_ng: 'm' },
                 'chat': { ng: 'mithel', gender_fr: 'm', gender_ng: 'f' },
@@ -116,17 +116,17 @@
                 'au revoir': { ng: 'va faill', gender_fr: 'm', gender_ng: 'm' }
             },
             others: {
-                'le': { ng: '', type: 'article' },
-                'la': { ng: '', type: 'article' },
-                'les': { ng: '', type: 'article' },
-                'je': { ng: 'é', type: 'pronom' },
-                'tu': { ng: 'ti', type: 'pronom' },
-                'il': { ng: 'ver', type: 'pronom' },
-                'elle': { ng: 'vara', type: 'pronom' },
-                'nous': { ng: 'ni', type: 'pronom' },
-                'vous': { ng: 'chi', type: 'pronom' },
-                'et': { ng: 'a', type: 'conjonction' }
-            },
+    'le': { ng: '', type: 'article' },
+    'la': { ng: '', type: 'article' },
+    'les': { ng: '', type: 'article' },
+    'je': { ng: 'é', type: 'pronom', show: true },
+    'tu': { ng: 'ti', type: 'pronom', show: true },
+    'il': { ng: 'ver', type: 'pronom', show: true },
+    'elle': { ng: 'vara', type: 'pronom', show: true },
+    'nous': { ng: 'ni', type: 'pronom', show: true },
+    'vous': { ng: 'chi', type: 'pronom', show: true },
+    'et': { ng: 'a', type: 'conjonction' }
+        }
             irregularPlurals: {
                 'œil': 'yeux',
                 'oeil': 'yeux',
@@ -261,14 +261,14 @@
             return radical + ending;
         }
         
-        function conjugateNG(infinitive, person, tense = 'présent') {
-            if ((person === 'il' || person === 'elle') && tense === 'présent') {
-                return infinitive;
-            }
-            
-            const ending = ngConjugations[tense]?.[person] || '';
-            return infinitive + ending;
-        }
+        function conjugateNG(verbData.ng_radical, subject, tense) {
+    if ((person === 'il' || person === 'elle') && tense === 'présent') {
+        return infinitif;
+    }
+    
+    const ending = ngConjugations[tense]?.[person] || '';
+    return radical + ending;
+}
         
         function detectSubject(words) {
             const pronouns = ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles'];
@@ -298,25 +298,34 @@
         
         // TRADUCTIONS
         function translateFrToNg(text) {
-            // Expressions composées d'abord
-            for (const [expr, data] of Object.entries(dict.expressions)) {
-                if (text.toLowerCase().includes(expr)) {
-                    return {
-                        translation: data.ng,
-                        analysis: [{ original: expr, translation: data.ng, type: 'expression' }],
-                        grammar: ['Expression composée']
-                    };
-                }
-            }
+            // Expressions composées (traitement partiel)
+let textToProcess = text.toLowerCase();
+let expressionAnalysis = [];
+
+for (const [expr, data] of Object.entries(dict.expressions)) {
+    const regex = new RegExp('\\b' + expr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
+    if (regex.test(textToProcess)) {
+        textToProcess = textToProcess.replace(regex, `|EXPR:${data.ng}|`);
+        expressionAnalysis.push({ original: expr, translation: data.ng, type: 'expression' });
+    }
+}
             
-            const words = text.toLowerCase().split(' ');
-            const subject = detectSubject(words);
-            let result = [];
-            let analysis = [];
+            const words = textToProcess.split(' ');
+const subject = detectSubject(text.toLowerCase().split(' '));
+let result = [];
+let analysis = [...expressionAnalysis];
             
             for (let i = 0; i < words.length; i++) {
-                const word = words[i];
-                let found = false;
+    let word = words[i];
+    let found = false;
+    
+    // Vérifier si c'est une expression remplacée
+    if (word.startsWith('|EXPR:') && word.endsWith('|')) {
+        result.push(word.slice(6, -1));
+        found = true;
+    }
+    
+    if (!found) {
                 
                 // FUTUR PROCHE (aller + infinitif → voor + infinitif)
                 if (['vais', 'vas', 'va', 'allons', 'allez', 'vont'].includes(word) && i + 1 < words.length) {
@@ -355,7 +364,7 @@
                         for (const person of ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles']) {
                             const conjugated = conjugateFrench(frVerb, person, tense);
                             if (conjugated === word) {
-                                const ngForm = conjugateNG(verbData.ng_inf, subject, tense);
+                                const ngForm = conjugateNG(verbData.ng_radical, subject, tense);
                                 result.push(ngForm);
                                 analysis.push({ 
                                     original: word, 
@@ -391,7 +400,6 @@
                             });
                             found = true;
                         }
-                    }
                 }
                 
                 if (!found) {
@@ -405,21 +413,23 @@
                 }
                 
                 if (!found) {
-                    // Autres (sauf articles vides)
-                    const other = dict.others[word];
-                    if (other && other.ng !== '') {
-                        result.push(other.ng);
-                        analysis.push({ original: word, translation: other.ng, type: other.type });
-                        found = true;
-                    } else if (other && other.ng === '') {
-                        analysis.push({ original: word, translation: '[ignoré]', type: other.type });
-                        found = true;
-                    }
+                    // Autres (incluant pronoms)
+const other = dict.others[word];
+if (other && (other.ng !== '' || other.show)) {
+    if (other.ng !== '') {
+        result.push(other.ng);
+        analysis.push({ original: word, translation: other.ng, type: other.type });
+    } else {
+        analysis.push({ original: word, translation: '[ignoré]', type: other.type });
+    }
+    found = true;
+}
                 }
                 
                 if (!found) {
                     result.push(`[${word}]`);
                     analysis.push({ original: word, translation: '[inconnu]', type: 'inconnu' });
+                }
                 }
             }
             
@@ -431,25 +441,34 @@
         }
         
         function translateNgToFr(text) {
-            // Expressions
-            for (const [frExpr, ngData] of Object.entries(dict.expressions)) {
-                if (text.toLowerCase().includes(ngData.ng)) {
-                    return {
-                        translation: frExpr,
-                        analysis: [{ original: ngData.ng, translation: frExpr, type: 'expression' }],
-                        grammar: ['Expression composée']
-                    };
-                }
-            }
-            
-            const words = text.toLowerCase().split(' ');
-            const subject = detectSubject(words);
-            let result = [];
-            let analysis = [];
-            
-            for (let i = 0; i < words.length; i++) {
-                const word = words[i];
-                let found = false;
+            // Expressions composées (traitement partiel)
+let textToProcess = text.toLowerCase();
+let expressionAnalysis = [];
+
+for (const [frExpr, ngData] of Object.entries(dict.expressions)) {
+    const regex = new RegExp('\\b' + ngData.ng.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
+    if (regex.test(textToProcess)) {
+        textToProcess = textToProcess.replace(regex, `|EXPR:${frExpr}|`);
+        expressionAnalysis.push({ original: ngData.ng, translation: frExpr, type: 'expression' });
+    }
+}
+
+const words = textToProcess.split(' ');
+const subject = detectSubject(text.toLowerCase().split(' '));
+let result = [];
+let analysis = [...expressionAnalysis];
+
+for (let i = 0; i < words.length; i++) {
+    let word = words[i];
+    let found = false;
+    
+    // Vérifier si c'est une expression remplacée
+    if (word.startsWith('|EXPR:') && word.endsWith('|')) {
+        result.push(word.slice(6, -1));
+        found = true;
+    }
+    
+    if (!found) {
                 
                 // FUTUR PROCHE (voor + infinitif → aller + infinitif)
                 if (word === 'voor' && i + 1 < words.length) {
@@ -528,7 +547,7 @@
                 for (const [frVerb, verbData] of Object.entries(dict.verbs)) {
                     for (const tense of ['présent', 'imparfait', 'futur']) {
                         for (const person of ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles']) {
-                            const ngForm = conjugateNG(verbData.ng_inf, person, tense);
+                            const ngForm = conjugateNG(verbData.ng_radical, person, tense);
                             if (ngForm === word) {
                                 const frForm = conjugateFrench(frVerb, subject, tense);
                                 result.push(frForm);
@@ -587,14 +606,17 @@
                 }
                 
                 if (!found) {
-                    // Autres mots
-                    for (const [frOther, otherData] of Object.entries(dict.others)) {
-                        if (otherData.ng === word && word !== '') {
-                            result.push(frOther);
-                            analysis.push({ original: word, translation: frOther, type: otherData.type });
-                            found = true;
-                            break;
-                        }
+                    // Autres (incluant pronoms)
+const other = dict.others[word];
+if (other && (other.ng !== '' || other.show)) {
+    if (other.ng !== '') {
+        result.push(other.ng);
+        analysis.push({ original: word, translation: other.ng, type: other.type });
+    } else {
+        analysis.push({ original: word, translation: '[ignoré]', type: other.type });
+    }
+    found = true;
+}
                     }
                 }
                 
@@ -602,6 +624,7 @@
                     result.push(`[${word}]`);
                     analysis.push({ original: word, translation: '[inconnu]', type: 'inconnu' });
                 }
+    }
             }
             
             return {
