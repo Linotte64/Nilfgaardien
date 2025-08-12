@@ -347,10 +347,17 @@ const frenchVerbGroups = {
     
     return infinitif;
 }
-            
-            const ending = nilf_endings[tense] ? nilf_endings[tense][person] : '';
-            return verb.radical + ending;
-        }
+            function conjugateNilfgaardian(infinitif, person, tense = 'présent') {
+    const verb = verbs[infinitif];
+    if (!verb) return infinitif;
+    
+    if ((person === 'il' || person === 'elle') && tense === 'présent') {
+        return infinitif;
+    }
+    
+    const ending = nilf_endings[tense] ? nilf_endings[tense][person] : '';
+    return verb.radical + ending;
+}
 
         function findFrenchVerb(conjugatedForm) {
             for (const [infinitif, verbData] of Object.entries(verbs)) {
@@ -710,79 +717,8 @@ function translateToFrench(text) {
         analysis.push({ original: word, translation: `[inconnu]`, type: 'inconnu' });
     });
     
-    return { translation: translation.join(' '), analysis, grammar: grammarNotes };
+    ret//urn { translation: translation.join(' '), analysis, grammar: grammarNotes };
 }
-        // Traduction français → nilfgaardien
-        function translateToConlang(text) {
-            const words = text.toLowerCase().split(/\s+/);
-            const { person: subject, source } = detectSubject(words, 'french-to-conlang');
-            
-            let translation = [];
-            let analysis = [];
-            let grammarNotes = [];
-            
-            if (source === 'pronoun') grammarNotes.push(`Pronom "${subject}" détecté`);
-            
-            const compoundTenses = detectCompoundTense(words);
-            
-            compoundTenses.forEach(item => {
-                if (item.type === 'passé_composé') {
-                    const infinitive = participleToInfinitive(item.verb);
-                    const nilfInfinitive = Object.keys(verbs).find(key => verbs[key].fr === infinitive);
-                    
-                    if (nilfInfinitive) {
-                        translation.push(`vaar ${nilfInfinitive}`);
-                        analysis.push({ original: `${item.auxiliary} ${item.verb}`, translation: `vaar ${nilfInfinitive}`, type: 'passé_composé' });
-                        grammarNotes.push(`Passé composé détecté: "${item.auxiliary} ${item.verb}" → vaar + infinitif`);
-                    } else {
-                        translation.push(`vaar [${item.verb}]`);
-                        analysis.push({ original: `${item.auxiliary} ${item.verb}`, translation: `vaar [${item.verb}]`, type: 'passé_composé (verbe inconnu)' });
-                    }
-                } else if (item.type === 'futur_proche') {
-                    const nilfInfinitive = Object.keys(verbs).find(key => verbs[key].fr === item.verb);
-                    
-                    if (nilfInfinitive) {
-                        translation.push(`voor ${nilfInfinitive}`);
-                        analysis.push({ original: `${item.auxiliary} ${item.verb}`, translation: `voor ${nilfInfinitive}`, type: 'futur_proche' });
-                        grammarNotes.push(`Futur proche détecté: "${item.auxiliary} ${item.verb}" → voor + infinitif`);
-                    } else {
-                        translation.push(`voor [${item.verb}]`);
-                        analysis.push({ original: `${item.auxiliary} ${item.verb}`, translation: `voor [${item.verb}]`, type: 'futur_proche (verbe inconnu)' });
-                    }
-                } else {
-                    const word = item.word;
-                    
-                    const basicEntry = Object.keys(basicLexicon).find(key => basicLexicon[key].fr === word);
-                    if (basicEntry) {
-                        translation.push(basicEntry);
-                        analysis.push({ original: word, translation: basicEntry, type: basicLexicon[basicEntry].type });
-                        return;
-                    }
-                    
-                    const nounEntry = Object.keys(nouns).find(key => nouns[key].fr === word);
-                    if (nounEntry) {
-                        translation.push(nounEntry);
-                        analysis.push({ original: word, translation: nounEntry, type: 'nom' });
-                        return;
-                    }
-                    
-                    const verbEntry = findFrenchVerb(word);
-                    if (verbEntry) {
-                        const nilfForm = conjugateNilfgaardian(verbEntry.nilfInfinitif, subject, verbEntry.tense);
-                        translation.push(nilfForm);
-                        analysis.push({ original: word, translation: nilfForm, type: 'verbe (' + subject + ', ' + verbEntry.tense + ')' });
-                        grammarNotes.push(`Verbe "${word}" conjugué pour "${subject}" au ${verbEntry.tense}`);
-                        return;
-                    }
-                    
-                    translation.push(`[${word}]`);
-                    analysis.push({ original: word, translation: `[inconnu]`, type: 'inconnu' });
-                }
-            });
-            
-            return { translation: translation.join(' '), analysis, grammar: grammarNotes };
-        }
-
         // Interface
         function swapLanguages() {
             const inputLabel = document.getElementById('input-label');
