@@ -630,7 +630,8 @@
         
         // INTERFACE
         function translate() {
-            console.log("Fonction translate appelée");
+    console.log("TRANSLATE APPELÉE !");
+    alert("Test - fonction translate appelée");
             
             const inputText = document.getElementById('input-text').value.trim();
             if (!inputText) {
@@ -687,8 +688,9 @@
         
         // ÉVÉNEMENTS
         document.getElementById('input-text').addEventListener('input', function() {
-            setTimeout(translate, 300);
-        });
+    console.log("Event déclenché");
+    setTimeout(translate, 300);
+});
         
         window.onload = function() {
             console.log("Page chargée");
