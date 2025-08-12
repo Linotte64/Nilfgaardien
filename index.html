@@ -143,7 +143,7 @@
             'cyrche': { fr: 'attaquant', gender_fr: 'm', gender_conlang: 'm' },
             'daerienn': { fr: 'sorcier', gender_fr: 'm', gender_conlang: 'm' },
             'deith': { fr: 'flamme', gender_fr: 'f', gender_conlang: 'f' },
-            'deithwen': { fr: 'flamme blanche', gender_fr: 'f', gender_conlang: 'f' },
+            'deithwen': { fr: 'flamme blanche', type: 'nom composé' },
             'dòchas': { fr: 'espoir', gender_fr: 'm', gender_conlang: 'm' },
             'd\'yaebl': { fr: 'diable', gender_fr: 'm', gender_conlang: 'm' },
             'e\'er': { fr: 'honneur', gender_fr: 'm', gender_conlang: 'm' },
@@ -255,9 +255,13 @@
 const frenchVerbGroups = {
     // 1er groupe (-er) - terminaisons régulières
     group1: {
-        endings: { je: 'e', tu: 'es', il: 'e', elle: 'e', nous: 'ons', vous: 'ez', ils: 'ent', elles: 'ent' },
-        verbs: ['danser', 'attaquer', 'chercher', 'regarder', 'provoquer', 'espérer', 'conspirer', 'rengainer']
+    endings: {
+        présent: { je: 'e', tu: 'es', il: 'e', elle: 'e', nous: 'ons', vous: 'ez', ils: 'ent', elles: 'ent' },
+        imparfait: { je: 'ais', tu: 'ais', il: 'ait', elle: 'ait', nous: 'ions', vous: 'iez', ils: 'aient', elles: 'aient' },
+        futur: { je: 'erai', tu: 'eras', il: 'era', elle: 'era', nous: 'erons', vous: 'erez', ils: 'eront', elles: 'eront' }
     },
+    verbs: ['danser', 'attaquer', 'chercher', 'regarder', 'provoquer', 'espérer', 'conspirer', 'rengainer']
+},
     
     // 2ème groupe (-ir réguliers)
     group2: {
@@ -283,11 +287,11 @@ const frenchVerbGroups = {
     for (const [groupName, groupData] of Object.entries(frenchVerbGroups)) {
         if (groupData.verbs && groupData.verbs.includes(infinitif)) {
             
-            // Groupe 1 (verbes en -er réguliers)
-            if (groupName === 'group1') {
-                const radical = infinitif.slice(0, -2);
-                return radical + (groupData.endings[person] || '');
-            }
+            // Groupe 1 (verbes en -er réguliers)if (groupName === 'group1') {
+    const radical = infinitif.slice(0, -2);
+    const endings = groupData.endings[tense] || groupData.endings.présent;
+    return radical + (endings[person] || '');
+}
             
             // Groupe 2 (verbes en -ir réguliers)
             if (groupName === 'group2') {
@@ -687,7 +691,7 @@ function translateToFrench(text) {
             return;
         }
         
-        const basicEntry = Object.keys(basicLexicon).find(key => key.toLowerCase() === word.toLowerCase());
+        const basicEntry = Object.keys(basicLexicon).find(key => basicLexicon[key].fr.toLowerCase() === word);
         if (basicEntry) {
             translation.push(basicLexicon[basicEntry].fr);
             analysis.push({ original: word, translation: basicLexicon[basicEntry].fr, type: basicLexicon[basicEntry].type });
