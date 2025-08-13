@@ -101,13 +101,13 @@ console.log("Script démarré");
                 'maison': { ng: 'tŷ', gender_fr: 'f', gender_ng: 'm' }
             },
             adjectives: {
-                'blanc': 'gwyn',
-                'blanche': 'gwyn',
-                'grand': 'mawr',
-                'grande': 'mawr',
-                'petit': 'bach',
-                'petite': 'bach'
-            },
+    'blanc': 'wen',
+    'grand': 'mawr',
+    'petit': 'bach',
+    'noir': 'du',
+    'rouge': 'coch',
+    'vert': 'gwyrdd',
+},
             expressions: {
                 'flamme blanche': { ng: 'deithwen', gender_fr: 'f', gender_ng: 'm' },
                 'au revoir': { ng: 'va faill', gender_fr: 'm', gender_ng: 'm' }
@@ -302,7 +302,75 @@ console.log("Script démarré");
     }
     
     return 'il';
+        }const ngAdjectiveRules = {
+    // Règles de formation : pluriel d'abord, puis féminin
+    makePlural: function(adj) {
+        if (adj.endsWith('n')) return adj; // Déjà au pluriel
+        if (adj.endsWith('d')) return adj + 'd';
+        return adj + 'n';
+    },
+    
+    makeFeminine: function(adj) {
+        if (adj.endsWith('e')) return adj; // Déjà au féminin
+        return adj + 'e';
+    },
+    
+    // Application des règles dans l'ordre
+    applyAgreement: function(baseAdj, gender, isPlural) {
+        let result = baseAdj;
+        
+        // 1. Pluriel d'abord
+        if (isPlural) {
+            result = this.makePlural(result);
         }
+        
+        // 2. Féminin ensuite
+        if (gender === 'f') {
+            result = this.makeFeminine(result);
+        }
+        
+        return result;
+    }
+};const frAdjectiveRules = {
+    makeFeminine: function(adj) {
+        if (adj.endsWith('e')) return adj;
+        if (adj.endsWith('f')) return adj.slice(0, -1) + 've';
+        if (adj.endsWith('x')) return adj.slice(0, -1) + 'se';
+        if (adj.endsWith('er')) return adj.slice(0, -2) + 'ère';
+        if (adj.endsWith('et')) return adj.slice(0, -2) + 'ette';
+        if (adj.endsWith('on')) return adj + 'ne';
+        if (adj.endsWith('en')) return adj + 'ne';
+        if (adj.endsWith('el')) return adj + 'le';
+        if (adj.endsWith('eil')) return adj + 'le';
+        if (adj.endsWith('as')) return adj + 'se';
+        if (adj.endsWith('os')) return adj + 'se';
+        if (adj.endsWith('s')) return adj + 'se';
+        return adj + 'e';
+    },
+    
+    makePlural: function(adj) {
+        if (adj.endsWith('s') || adj.endsWith('x')) return adj;
+        if (adj.endsWith('eau')) return adj + 'x';
+        if (adj.endsWith('al')) return adj.slice(0, -2) + 'aux';
+        return adj + 's';
+    },
+    
+    applyAgreement: function(baseAdj, gender, isPlural) {
+        let result = baseAdj;
+        
+        // Féminin d'abord en français
+        if (gender === 'f') {
+            result = this.makeFeminine(result);
+        }
+        
+        // Puis pluriel
+        if (isPlural) {
+            result = this.makePlural(result);
+        }
+        
+        return result;
+    }
+};
         
         // TRADUCTIONS
         function translateFrToNg(text) {
@@ -609,13 +677,19 @@ console.log("Script démarré");
                     }
                     
                     if (!found) {
-                        // Adjectifs
-                        for (const [frAdj, ngAdj] of Object.entries(dict.adjectives)) {
-                            if (ngAdj === word) {
-                                result.push(frAdj);
-                                analysis.push({ original: word, translation: frAdj, type: 'adjectif' });
-                                found = true;
-                                break;
+                        // Adjectifs avec accord
+for (const [frAdj, ngAdj] of Object.entries(dict.adjectives)) {
+    if (frAdj === word) {
+        const context = detectAdjectiveContext(words, i);
+        const accordedAdj = ngAdjectiveRules.applyAgreement(ngAdj, context.gender, context.isPlural);
+        result.push(accordedAdj);
+        analysis.push({ 
+            original: word, 
+            translation: accordedAdj, 
+            type: `adjectif (${context.gender}, ${context.isPlural ? 'pluriel' : 'singulier'})` 
+        });
+        found = true;
+        break;
                             }
                         }
                     }
