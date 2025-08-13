@@ -261,14 +261,14 @@ console.log("Script démarré");
             return radical + ending;
         }
         
-        function conjugateNG(radical, person, tense = 'présent') {
-            if ((person === 'il' || person === 'elle') && tense === 'présent') {
-                return radical;
-            }
-            
-            const ending = ngConjugations[tense]?.[person] || '';
-            return radical + ending;
-        }
+        function conjugateNG(verbData, person, tense = 'présent') {
+    if ((person === 'il' || person === 'elle') && tense === 'présent') {
+        return verbData.ng_inf; // Utiliser l'infinitif pour la 3ème personne
+    }
+    
+    const ending = ngConjugations[tense]?.[person] || '';
+    return verbData.ng_radical + ending;
+                }
         
         function detectSubject(words) {
     // Chercher d'abord les pronoms nilfgaardiens
@@ -623,7 +623,7 @@ function findNounInfo(word, direction) {
                             for (const person of ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles']) {
                                 const conjugated = conjugateFrench(frVerb, person, tense);
                                 if (conjugated === word) {
-                                    const ngForm = conjugateNG(verbData.ng_radical, subject, tense);
+                                    const ngForm = conjugateNG(verbData, subject, tense);
                                     result.push(ngForm);
                                     analysis.push({ 
                                         original: word, 
@@ -821,7 +821,7 @@ function findNounInfo(word, direction) {
                     for (const [frVerb, verbData] of Object.entries(dict.verbs)) {
                         for (const tense of ['présent', 'imparfait', 'futur']) {
                             for (const person of ['je', 'tu', 'il', 'elle', 'nous', 'vous', 'ils', 'elles']) {
-                                const ngForm = conjugateNG(verbData.ng_radical, person, tense);
+                                const ngForm = conjugateNG(verbData, subject, tense);
                                 if (ngForm === word) {
                                     const frForm = conjugateFrench(frVerb, subject, tense);
                                     result.push(frForm);
