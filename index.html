@@ -372,6 +372,98 @@ console.log("Script démarré");
         return result;
     }
 };
+        function detectAdjectiveContext(words, adjIndex, direction) {
+    let targetGender = 'm';
+    let isPlural = false;
+    let foundNoun = null;
+    
+    // Chercher le nom le plus proche (avant ou après)
+    for (let distance = 1; distance <= 3; distance++) {
+        // Chercher avant
+        if (adjIndex - distance >= 0) {
+            const word = words[adjIndex - distance].toLowerCase();
+            const nounInfo = findNounInfo(word, direction);
+            if (nounInfo) {
+                foundNoun = nounInfo;
+                break;
+            }
+        }
+        
+        // Chercher après
+        if (adjIndex + distance < words.length) {
+            const word = words[adjIndex + distance].toLowerCase();
+            const nounInfo = findNounInfo(word, direction);
+            if (nounInfo) {
+                foundNoun = nounInfo;
+                break;
+            }
+        }
+    }
+    
+    if (foundNoun) {
+        targetGender = direction === 'fr-to-ng' ? foundNoun.gender_ng : foundNoun.gender_fr;
+        isPlural = foundNoun.isPlural;
+    }
+    
+    return { gender: targetGender, isPlural: isPlural, noun: foundNoun?.word };
+}
+
+function findNounInfo(word, direction) {
+    // Ignorer les articles/mots fonctionnels
+    if (['le', 'la', 'les', 'un', 'une', 'des', 'de', 'du', 'des', 'et', 'a'].includes(word)) {
+        if (['les', 'des'].includes(word)) {
+            return { isPlural: true, pluralArticle: true };
+        }
+        return null;
+    }
+    
+    if (direction === 'fr-to-ng') {
+        // Chercher nom français
+        if (dict.nouns[word]) {
+            return { 
+                word: word, 
+                gender_fr: dict.nouns[word].gender_fr,
+                gender_ng: dict.nouns[word].gender_ng,
+                isPlural: false 
+            };
+        }
+        
+        // Chercher pluriel français
+        const pluralCheck = detectFrenchPlural(word);
+        if (pluralCheck.isPlural && dict.nouns[pluralCheck.singular]) {
+            return { 
+                word: pluralCheck.singular,
+                gender_fr: dict.nouns[pluralCheck.singular].gender_fr,
+                gender_ng: dict.nouns[pluralCheck.singular].gender_ng,
+                isPlural: true 
+            };
+        }
+    } else {
+        // Chercher nom nilfgaardien
+        for (const [frNoun, nounData] of Object.entries(dict.nouns)) {
+            if (nounData.ng === word) {
+                return { 
+                    word: frNoun,
+                    gender_fr: nounData.gender_fr,
+                    gender_ng: nounData.gender_ng,
+                    isPlural: false 
+                };
+            }
+        }
+        
+        // Chercher pluriel nilfgaardien
+        const ngPluralCheck = detectNgPlural(word);
+        if (ngPluralCheck.isPlural && ngPluralCheck.frSingular) {
+            return { 
+                word: ngPluralCheck.frSingular,
+                gender_fr: dict.nouns[ngPluralCheck.frSingular].gender_fr,
+                gender_ng: dict.nouns[ngPluralCheck.frSingular].gender_ng,
+                isPlural: true 
+            };
+        }
+    }
+    
+    return null;
         
         // TRADUCTIONS
         function translateFrToNg(text) {
@@ -480,12 +572,19 @@ console.log("Script démarré");
                     }
                     
                     if (!found) {
-                        // Adjectifs
-                        const adj = dict.adjectives[word];
-                        if (adj) {
-                            result.push(adj);
-                            analysis.push({ original: word, translation: adj, type: 'adjectif' });
-                            found = true;
+                        // Adjectifs avec accord
+for (const [frAdj, ngAdj] of Object.entries(dict.adjectives)) {
+    if (frAdj === word) {
+        const context = detectAdjectiveContext(words, i, 'fr-to-ng');
+        const accordedAdj = ngAdjectiveRules.applyAgreement(ngAdj, context.gender, context.isPlural);
+        result.push(accordedAdj);
+        analysis.push({ 
+            original: word, 
+            translation: accordedAdj, 
+            type: `adjectif → ${context.noun || '?'} (${context.gender}, ${context.isPlural ? 'pl' : 'sg'})` 
+        });
+        found = true;
+        break;
                         }
                     }
                     if (!found) {
@@ -678,16 +777,19 @@ console.log("Script démarré");
                     }
                     
                     if (!found) {
-                        // Adjectifs avec accord
+// Adjectifs avec accord
 for (const [frAdj, ngAdj] of Object.entries(dict.adjectives)) {
-    if (frAdj === word) {
-        const context = detectAdjectiveContext(words, i);
-        const accordedAdj = ngAdjectiveRules.applyAgreement(ngAdj, context.gender, context.isPlural);
+    if (ngAdj === word || ngAdjectiveRules.applyAgreement(ngAdj, 'f', false) === word || 
+        ngAdjectiveRules.applyAgreement(ngAdj, 'm', true) === word || 
+        ngAdjectiveRules.applyAgreement(ngAdj, 'f', true) === word) {
+        
+        const context = detectAdjectiveContext(words, i, 'ng-to-fr');
+        const accordedAdj = frAdjectiveRules.applyAgreement(frAdj, context.gender, context.isPlural);
         result.push(accordedAdj);
         analysis.push({ 
             original: word, 
             translation: accordedAdj, 
-            type: `adjectif (${context.gender}, ${context.isPlural ? 'pluriel' : 'singulier'})` 
+            type: `adjectif → ${context.noun || '?'} (${context.gender}, ${context.isPlural ? 'pl' : 'sg'})` 
         });
         found = true;
         break;
