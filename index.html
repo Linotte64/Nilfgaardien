@@ -372,6 +372,97 @@ console.log("Script démarré");
         return result;
     }
 };
+        function getBaseAdjective(word) {
+    // D'abord chercher directement dans le dictionnaire
+    if (dict.adjectives[word]) {
+        return { base: word, found: true };
+    }
+    
+    // Règles automatiques pour retrouver le masculin à partir du féminin
+    
+    // Règle simple : enlever le 'e' final
+    if (word.endsWith('e') && word.length > 2) {
+        const masculine = word.slice(0, -1);
+        if (dict.adjectives[masculine]) {
+            return { base: masculine, found: true };
+        }
+    }
+    
+    // Règles spéciales françaises
+    const transformRules = [
+        { fem: 've', masc: 'f' },      // sportive → sportif
+        { fem: 'se', masc: 'x' },      // heureuse → heureux  
+        { fem: 'ère', masc: 'er' },    // première → premier
+        { fem: 'ette', masc: 'et' },   // coquette → coquet
+        { fem: 'nne', masc: 'n' },     // ancienne → ancien
+        { fem: 'lle', masc: 'l' },     // nouvelle → nouvel
+        { fem: 'sse', masc: 's' },     // grosse → gros
+        { fem: 'che', masc: 'c' },     // blanche → blanc
+        { fem: 'gue', masc: 'g' },     // longue → long
+    ];
+    
+    for (const rule of transformRules) {
+        if (word.endsWith(rule.fem)) {
+            const potential = word.slice(0, -rule.fem.length) + rule.masc;
+            if (dict.adjectives[potential]) {
+                return { base: potential, found: true };
+            }
+        }
+    }
+    
+    // Cas spéciaux irréguliers
+    const irregularFeminines = {
+        'blanche': 'blanc',
+        'fraîche': 'frais',
+        'sèche': 'sec',
+        'publique': 'public',
+        'grecque': 'grec',
+        'turque': 'turc'
+    };
+    
+    if (irregularFeminines[word] && dict.adjectives[irregularFeminines[word]]) {
+        return { base: irregularFeminines[word], found: true };
+    }
+    
+    return { base: word, found: false };
+}
+
+function getSingularAdjective(word) {
+    // D'abord vérifier si c'est déjà singulier
+    const baseCheck = getBaseAdjective(word);
+    if (baseCheck.found) {
+        return baseCheck;
+    }
+    
+    // Règles de pluriel français
+    if (word.endsWith('s') && !word.endsWith('ss')) {
+        const singular = word.slice(0, -1);
+        const singularCheck = getBaseAdjective(singular);
+        if (singularCheck.found) {
+            return singularCheck;
+        }
+    }
+    
+    if (word.endsWith('x')) {
+        // Cas spéciaux comme beaux → beau
+        const singular = word.slice(0, -1);
+        const singularCheck = getBaseAdjective(singular);
+        if (singularCheck.found) {
+            return singularCheck;
+        }
+        
+        // Cas eau → eaux
+        if (word.endsWith('eaux')) {
+            const singular = word.slice(0, -1); // beaux → beau
+            const singularCheck = getBaseAdjective(singular);
+            if (singularCheck.found) {
+                return singularCheck;
+            }
+        }
+    }
+    
+    return { base: word, found: false };
+}
         function detectAdjectiveContext(words, adjIndex, direction) {
     let targetGender = 'm';
     let isPlural = false;
@@ -572,21 +663,21 @@ function findNounInfo(word, direction) {
                     }
                     
                     if (!found) {
-                        // Adjectifs avec accord
-for (const [frAdj, ngAdj] of Object.entries(dict.adjectives)) {
-    if (frAdj === word) {
+    // Adjectifs avec accord (gestion automatique des formes)
+    const adjInfo = getSingularAdjective(word);
+    if (adjInfo.found) {
+        const ngAdj = dict.adjectives[adjInfo.base];
         const context = detectAdjectiveContext(words, i, 'fr-to-ng');
         const accordedAdj = ngAdjectiveRules.applyAgreement(ngAdj, context.gender, context.isPlural);
         result.push(accordedAdj);
         analysis.push({ 
             original: word, 
             translation: accordedAdj, 
-            type: `adjectif → ${context.noun || '?'} (${context.gender}, ${context.isPlural ? 'pl' : 'sg'})` 
+            type: `adjectif (${adjInfo.base}) → ${context.noun || '?'} (${context.gender}, ${context.isPlural ? 'pl' : 'sg'})` 
         });
         found = true;
-        break;
-                        }
-                    }
+    }
+}
                     }
                     if (!found) {
     // Pronoms personnels
