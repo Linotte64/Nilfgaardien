@@ -467,36 +467,59 @@ function getSingularAdjective(word) {
     let targetGender = 'm';
     let isPlural = false;
     let foundNoun = null;
+    let bestScore = 0;
     
-    // Chercher le nom le plus proche (avant ou après)
-    for (let distance = 1; distance <= 3; distance++) {
-        // Chercher avant
-        if (adjIndex - distance >= 0) {
-            const word = words[adjIndex - distance].toLowerCase();
-            const nounInfo = findNounInfo(word, direction);
-            if (nounInfo) {
-                foundNoun = nounInfo;
-                break;
-            }
-        }
+    console.log(`Analyse contexte pour adjectif "${words[adjIndex]}" à l'index ${adjIndex}`);
+    
+    // Analyser chaque mot de la phrase pour trouver les noms potentiels
+    for (let i = 0; i < words.length; i++) {
+        if (i === adjIndex) continue; // Ignorer l'adjectif lui-même
         
-        // Chercher après
-        if (adjIndex + distance < words.length) {
-            const word = words[adjIndex + distance].toLowerCase();
-            const nounInfo = findNounInfo(word, direction);
-            if (nounInfo) {
+        const word = words[i].toLowerCase();
+        const nounInfo = findNounInfo(word, direction);
+        
+        if (nounInfo && !nounInfo.pluralArticle) {
+            // Calculer un score basé sur plusieurs critères
+            let score = 0;
+            const distance = Math.abs(i - adjIndex);
+            
+            // 1. Proximité (plus c'est proche, mieux c'est)
+            score += Math.max(0, 10 - distance);
+            
+            // 2. Position relative (après le nom = épithète, avant = attribut)
+            if (i < adjIndex) {
+                score += 3; // Bonus pour "nom + adjectif"
+            }
+            
+            // 3. Présence d'articles/déterminants qui lient
+            score += analyzeArticleContext(words, i, adjIndex, direction);
+            
+            // 4. Détection de structures grammaticales
+            score += detectGrammarPattern(words, i, adjIndex);
+            
+            console.log(`Nom trouvé: "${nounInfo.word}" à distance ${distance}, score: ${score}`);
+            
+            if (score > bestScore) {
+                bestScore = score;
                 foundNoun = nounInfo;
-                break;
+                console.log(`Nouveau meilleur nom: "${nounInfo.word}" avec score ${score}`);
             }
         }
     }
     
-    if (foundNoun) {
+    // Détection des articles pour le genre/nombre si pas de nom trouvé
+    if (!foundNoun) {
+        const articleInfo = detectArticleGender(words, adjIndex);
+        targetGender = articleInfo.gender;
+        isPlural = articleInfo.isPlural;
+        console.log(`Pas de nom trouvé, utilisation articles: genre=${targetGender}, pluriel=${isPlural}`);
+    } else {
         targetGender = direction === 'fr-to-ng' ? foundNoun.gender_ng : foundNoun.gender_fr;
         isPlural = foundNoun.isPlural;
+        console.log(`Accord avec "${foundNoun.word}": genre=${targetGender}, pluriel=${isPlural}`);
     }
     
-    return { gender: targetGender, isPlural: isPlural, noun: foundNoun?.word };
+    return { gender: targetGender, isPlural: isPlural, noun: foundNoun?.word, score: bestScore };
 }
 
 function findNounInfo(word, direction) {
@@ -556,6 +579,134 @@ function findNounInfo(word, direction) {
     
     return null;
 }
+        function analyzeArticleContext(words, nounIndex, adjIndex, direction) {
+    let score = 0;
+    const range = 3; // Chercher dans un rayon de 3 mots
+    
+    // Chercher des articles/déterminants qui lient nom et adjectif
+    const start = Math.max(0, Math.min(nounIndex, adjIndex) - range);
+    const end = Math.min(words.length, Math.max(nounIndex, adjIndex) + range);
+    
+    for (let i = start; i < end; i++) {
+        const word = words[i].toLowerCase();
+        
+        // Articles définis/indéfinis
+        if (['le', 'la', 'les', 'un', 'une', 'des'].includes(word)) {
+            score += 2;
+        }
+        
+        // Déterminants possessifs
+        if (['mon', 'ma', 'mes', 'ton', 'ta', 'tes', 'son', 'sa', 'ses', 'notre', 'nos', 'votre', 'vos', 'leur', 'leurs'].includes(word)) {
+            score += 2;
+        }
+        
+        // Déterminants démonstratifs
+        if (['ce', 'cet', 'cette', 'ces'].includes(word)) {
+            score += 2;
+        }
+    }
+    
+    return score;
+}
+
+function detectGrammarPattern(words, nounIndex, adjIndex) {
+    let score = 0;
+    
+    // Patterns communs en français
+    const distance = Math.abs(nounIndex - adjIndex);
+    
+    // Pattern: "nom + adjectif" (épithète)
+    if (adjIndex === nounIndex + 1) {
+        score += 5; // "chat noir"
+    }
+    
+    // Pattern: "adjectif + nom" (épithète antéposée)
+    if (nounIndex === adjIndex + 1) {
+        score += 3; // "grand homme"
+    }
+    
+    // Pattern: "nom + être/devenir + adjectif" (attribut)
+    if (distance <= 3) {
+        for (let i = Math.min(nounIndex, adjIndex); i < Math.max(nounIndex, adjIndex); i++) {
+            const word = words[i].toLowerCase();
+            if (['est', 'sont', 'était', 'étaient', 'sera', 'seront', 'devient', 'deviennent'].includes(word)) {
+                score += 4; // "le chat est noir"
+            }
+        }
+    }
+    
+    // Pattern: "nom + qui + verbe + adjectif" (proposition relative)
+    if (distance <= 5) {
+        let hasQui = false;
+        let hasVerb = false;
+        
+        for (let i = Math.min(nounIndex, adjIndex); i < Math.max(nounIndex, adjIndex); i++) {
+            const word = words[i].toLowerCase();
+            if (word === 'qui') hasQui = true;
+            if (['est', 'sont', 'devient', 'semble', 'paraît'].includes(word)) hasVerb = true;
+        }
+        
+        if (hasQui && hasVerb) {
+            score += 3; // "le chat qui est noir"
+        }
+    }
+    
+    return score;
+}
+
+function detectArticleGender(words, adjIndex) {
+    let gender = 'm';
+    let isPlural = false;
+    
+    // Chercher dans un rayon de 5 mots autour de l'adjectif
+    for (let distance = 1; distance <= 5; distance++) {
+        // Chercher avant
+        if (adjIndex - distance >= 0) {
+            const word = words[adjIndex - distance].toLowerCase();
+            const articleInfo = getArticleInfo(word);
+            if (articleInfo) {
+                return articleInfo;
+            }
+        }
+        
+        // Chercher après
+        if (adjIndex + distance < words.length) {
+            const word = words[adjIndex + distance].toLowerCase();
+            const articleInfo = getArticleInfo(word);
+            if (articleInfo) {
+                return articleInfo;
+            }
+        }
+    }
+    
+    return { gender, isPlural };
+}
+
+function getArticleInfo(word) {
+    const articles = {
+        'la': { gender: 'f', isPlural: false },
+        'une': { gender: 'f', isPlural: false },
+        'le': { gender: 'm', isPlural: false },
+        'un': { gender: 'm', isPlural: false },
+        'les': { gender: 'm', isPlural: true }, // Par défaut masculin pluriel
+        'des': { gender: 'm', isPlural: true },
+        'ma': { gender: 'f', isPlural: false },
+        'ta': { gender: 'f', isPlural: false },
+        'sa': { gender: 'f', isPlural: false },
+        'mon': { gender: 'm', isPlural: false },
+        'ton': { gender: 'm', isPlural: false },
+        'son': { gender: 'm', isPlural: false },
+        'mes': { gender: 'm', isPlural: true },
+        'tes': { gender: 'm', isPlural: true },
+        'ses': { gender: 'm', isPlural: true },
+        'cette': { gender: 'f', isPlural: false },
+        'ce': { gender: 'm', isPlural: false },
+        'cet': { gender: 'm', isPlural: false },
+        'ces': { gender: 'm', isPlural: true }
+    };
+    
+    return articles[word] || null;
+            }
         // TRADUCTIONS
         function translateFrToNg(text) {
             // Expressions composées (traitement partiel)
