@@ -722,9 +722,61 @@ function findVerbFromParticiple(participle) {
     return null;
 }
         // TRADUCTIONS
+        function preprocessFrenchText(text) {
+    let processedText = text.toLowerCase();
+    
+    // Règle 1: j' + voyelle/h → je + mot
+    processedText = processedText.replace(/\bj'([aeiouyhàéèêëïîôöùûüÿ])/g, 'je $1');
+    
+    // Règle 2 améliorée: l' + voyelle/h → le/la selon le genre du mot
+    processedText = processedText.replace(/\bl'([aeiouyhàéèêëïîôöùûüÿ]\w*)/g, function(match, word) {
+        // Vérifier le genre dans le dictionnaire
+        if (dict.nouns[word] && dict.nouns[word].gender_fr === 'f') {
+            return 'la ' + word;
+        }
+        return 'le ' + word;  // Par défaut masculin
+    });
+    
+    // Règle 3: d' + voyelle/h → de + mot
+    processedText = processedText.replace(/\bd'([aeiouyhàéèêëïîôöùûüÿ])/g, 'de $1');
+    
+    // Règle 4: qu' + voyelle/h → que + mot
+    processedText = processedText.replace(/\bqu'([aeiouyhàéèêëïîôöùûüÿ])/g, 'que $1');
+    
+    // Règle 5: n' + voyelle/h → ne + mot (négation)
+    processedText = processedText.replace(/\bn'([aeiouyhàéèêëïîôöùûüÿ])/g, 'ne $1');
+    
+    // Règle 6: t' + voyelle/h → te + mot
+    processedText = processedText.replace(/\bt'([aeiouyhàéèêëïîôöùûüÿ])/g, 'te $1');
+    
+    // Règle 7: s' + voyelle/h → se + mot
+    processedText = processedText.replace(/\bs'([aeiouyhàéèêëïîôöùûüÿ])/g, 'se $1');
+    
+    // Règle 8: m' + voyelle/h → me + mot
+    processedText = processedText.replace(/\bm'([aeiouyhàéèêëïîôöùûüÿ])/g, 'me $1');
+    
+    // Cas spéciaux fréquents qu'on peut corriger manuellement
+    const specialCases = {
+        "c'est": "ce est",
+        "c'était": "ce était",
+        "c'étaient": "ce étaient",
+        "aujourd'hui": "aujourd hui"  // Garde comme un seul mot
+    };
+    
+    for (const [contraction, expansion] of Object.entries(specialCases)) {
+        const regex = new RegExp('\\b' + contraction.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+        processedText = processedText.replace(regex, expansion);
+    }
+    
+    return processedText;
+         }
         function translateFrToNg(text) {
-            // Expressions composées (traitement partiel)
-            let textToProcess = text.toLowerCase();
+    // Préprocessing des contractions
+    text = preprocessFrenchText(text);
+    
+    // Expressions composées (traitement partiel)
+    let textToProcess = text.toLowerCase();
+
             let expressionAnalysis = [];
 
             for (const [expr, data] of Object.entries(dict.expressions)) {
