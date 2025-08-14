@@ -1160,6 +1160,30 @@ for (const [frAdj, ngAdj] of Object.entries(dict.adjectives)) {
                 grammar: [`Sujet: ${subject}`]
             };
         }
+        // FUTUR ANTÉRIEUR NG → FR (vaen + participe → aurai + participe)
+if (word.startsWith('vaen') && i + 1 < words.length) {
+    const nextWord = words[i + 1];
+    // Vérifier si le mot suivant est un participe nilfgaardien (finit par 'at')
+    if (nextWord.endsWith('at')) {
+        // Retrouver le verbe français correspondant
+        const radical = nextWord.slice(0, -2);
+        for (const [frVerb, verbData] of Object.entries(dict.verbs)) {
+            if (verbData.ng_radical === radical) {
+                const auraiForm = conjugateFrench('avoir', subject, 'futur');
+                result.push(`${auraiForm} ${verbData.fr_participle}`);
+                analysis.push({
+                    original: `${word} ${nextWord}`,
+                    translation: `${auraiForm} ${verbData.fr_participle}`,
+                    type: 'futur antérieur'
+                });
+                i++; // Passer au mot suivant
+                found = true;
+                break;
+            }
+        }
+        if (found) continue;
+    }
+}
         
         // INTERFACE
         function translate() {
