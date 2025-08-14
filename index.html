@@ -1179,10 +1179,44 @@ for (const [frAdj, ngAdj] of Object.entries(dict.adjectives)) {
             }
             
             return {
-                translation: result.join(' '),
-                analysis: analysis,
-                grammar: [`Sujet: ${subject}`]
-            };
+    translation: postprocessFrenchText(result.join(' ')),
+    analysis: analysis,
+    grammar: [`Sujet: ${subject}`]
+};
+        }
+        function postprocessFrenchText(text) {
+    // Reconstituer les apostrophes
+    let processedText = text;
+    
+    // je + voyelle → j'
+    processedText = processedText.replace(/\bje ([aeiouyhàéèêëïîôöùûüÿ])/g, "j'$1");
+    
+    // le/la + voyelle → l'
+    processedText = processedText.replace(/\b(?:le|la) ([aeiouyhàéèêëïîôöùûüÿ])/g, "l'$1");
+    
+    // de + voyelle → d'
+    processedText = processedText.replace(/\bde ([aeiouyhàéèêëïîôöùûüÿ])/g, "d'$1");
+    
+    // que + voyelle → qu'
+    processedText = processedText.replace(/\bque ([aeiouyhàéèêëïîôöùûüÿ])/g, "qu'$1");
+    
+    // ne + voyelle → n'
+    processedText = processedText.replace(/\bne ([aeiouyhàéèêëïîôöùûüÿ])/g, "n'$1");
+    
+    // te + voyelle → t'
+    processedText = processedText.replace(/\bte ([aeiouyhàéèêëïîôöùûüÿ])/g, "t'$1");
+    
+    // se + voyelle → s'
+    processedText = processedText.replace(/\bse ([aeiouyhàéèêëïîôöùûüÿ])/g, "s'$1");
+    
+    // me + voyelle → m'
+    processedText = processedText.replace(/\bme ([aeiouyhàéèêëïîôöùûüÿ])/g, "m'$1");
+    
+    // Cas spéciaux
+    processedText = processedText.replace(/\bce est\b/g, "c'est");
+    processedText = processedText.replace(/\bce était\b/g, "c'était");
+    
+    return processedText;
         }
         
         
