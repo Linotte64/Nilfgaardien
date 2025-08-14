@@ -80,7 +80,6 @@ console.log("Script démarré");
         // DICTIONNAIRE ENRICHI
         const dict = {
             verbs: {
-            verbs: {
     'danser': { ng_conj: 'addan', ng_radical: 'add', ng_inf: 'addan', fr_participle: 'dansé', group: 1 },
     'être': { ng_conj: 'ess', ng_radical: 'ess', ng_inf: 'essen', fr_participle: 'été', group: 'irregular' },
     'aller': { ng_conj: 'var', ng_radical: 'var', ng_inf: 'varen', fr_participle: 'allé', group: 'irregular' },
@@ -175,7 +174,7 @@ console.log("Script démarré");
         
         // CONJUGAISONS NILFGAARDIENNES
         const ngConjugations = {
-            présent: { je: 'en', tu: 'es', il: 'ng_inf', elle: 'ng_inf', nous: 'avam', vous: 'avel', ils: 'arin', elles: 'arin' },
+            présent: { je: 'en', tu: 'es', il: '', elle: '', nous: 'avam', vous: 'avel', ils: 'arin', elles: 'arin' },
             imparfait: { je: 'ien', tu: 'ias', il: 'ier', elle: 'ier', nous: 'iavem', vous: 'iavel', ils: 'iarn', elles: 'iarn' },
             futur: { je: 'rash', tu: 'resh', il: 'rin', elle: 'rin', nous: 'ravam', vous: 'ravel', ils: 'ranem', elles: 'ranim' }
         };
@@ -766,6 +765,7 @@ function findVerbFromParticiple(participle) {
                             i++; // Passer au mot suivant
                             continue;
                         }
+                    }
                         // FUTUR ANTÉRIEUR (aurai + participe → vaen + participe)
 if (['aurai', 'auras', 'aura', 'aurons', 'aurez', 'auront'].includes(word) && i + 1 < words.length) {
     const nextWord = words[i + 1];
