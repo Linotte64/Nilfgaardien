@@ -752,21 +752,22 @@ function findVerbFromParticiple(participle) {
                 
                 if (!found) {
                     // FUTUR PROCHE (aller + infinitif → voor + infinitif)
-                    if (['vais', 'vas', 'va', 'allons', 'allez', 'vont'].includes(word) && i + 1 < words.length) {
-                        const nextWord = words[i + 1];
-                        const verb = dict.verbs[nextWord];
-                        if (verb) {
-                            result.push(`voor ${verb.ng_radical}`);
-                            analysis.push({
-                                original: `${word} ${nextWord}`,
-                                translation: `voor ${verb.ng_radical}`,
-                                type: 'futur proche'
-                            });
-                            i++; // Passer au mot suivant
-                            continue;
-                        }
-                    }
-                        // FUTUR ANTÉRIEUR (aurai + participe → vaen + participe)
+if (['vais', 'vas', 'va', 'allons', 'allez', 'vont'].includes(word) && i + 1 < words.length) {
+    const nextWord = words[i + 1];
+    const verb = dict.verbs[nextWord];
+    if (verb) {
+        result.push(`voor ${verb.ng_radical}`);
+        analysis.push({
+            original: `${word} ${nextWord}`,
+            translation: `voor ${verb.ng_radical}`,
+            type: 'futur proche'
+        });
+        i++; // Passer au mot suivant
+        continue;
+    }
+}
+
+// FUTUR ANTÉRIEUR (aurai + participe → vaen + participe)
 if (['aurai', 'auras', 'aura', 'aurons', 'aurez', 'auront'].includes(word) && i + 1 < words.length) {
     const nextWord = words[i + 1];
     const participleVerb = findVerbFromParticiple(nextWord);
@@ -783,7 +784,6 @@ if (['aurai', 'auras', 'aura', 'aurons', 'aurez', 'auront'].includes(word) && i 
         continue;
     }
 }
-                    }
                     
                     // GESTION "DE + POSSESSIF" → "AEP"
                     if (word === 'de' && i + 1 < words.length) {
