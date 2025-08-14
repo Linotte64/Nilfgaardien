@@ -80,16 +80,18 @@ console.log("Script démarré");
         // DICTIONNAIRE ENRICHI
         const dict = {
             verbs: {
-                'danser': { ng_conj: 'addan', ng_radical: 'add', ng_inf: 'addan', group: 1 },
-                'être': { ng_conj: 'ess', ng_radical: 'ess', ng_inf: 'essan', group: 'irregular' },
-                'aller': { ng_conj: 'var', ng_radical: 'var', ng_inf: 'varen', group: 'irregular' },
-                'avoir': { ng_conj: 'caerme', ng_radical: 'caer', ng_inf: 'caermen', group: 'irregular' },
-                'finir': { ng_conj: 'finar', ng_radical: 'fin', ng_inf: 'finar', group: 2 },
-                'choisir': { ng_conj: 'dewisan', ng_radical: 'dewis', ng_inf: 'dewisan', group: 2 },
-                'manger': { ng_conj: 'kroesan', ng_radical: 'kroes', ng_inf: 'kroesan', group: 1 },
-                'parler': { ng_conj: 'gwedan', ng_radical: 'gwed', ng_inf: 'gwedan', group: 1 },
-                'faire': { ng_conj: 'gwneuden', ng_radical: 'gwneud', ng_inf: 'gwneuden', group: 'irregular' }
-            },
+            verbs: {
+    'danser': { ng_conj: 'addan', ng_radical: 'add', ng_inf: 'addan', fr_participle: 'dansé', group: 1 },
+    'être': { ng_conj: 'ess', ng_radical: 'ess', ng_inf: 'essen', fr_participle: 'été', group: 'irregular' },
+    'aller': { ng_conj: 'var', ng_radical: 'var', ng_inf: 'varen', fr_participle: 'allé', group: 'irregular' },
+    'avoir': { ng_conj: 'caerme', ng_radical: 'caer', ng_inf: 'caermen', fr_participle: 'eu', group: 'irregular' },
+    'finir': { ng_conj: 'finar', ng_radical: 'fin', ng_inf: 'finar', fr_participle: 'fini', group: 2 },
+    'choisir': { ng_conj: 'dewisan', ng_radical: 'dewis', ng_inf: 'dewisan', fr_participle: 'choisi', group: 2 },
+    'manger': { ng_conj: 'kroesan', ng_radical: 'kroes', ng_inf: 'kroesan', fr_participle: 'mangé', group: 1 },
+    'parler': { ng_conj: 'gwedan', ng_radical: 'gwed', ng_inf: 'gwedan', fr_participle: 'parlé', group: 1 },
+    'faire': { ng_conj: 'gwneuden', ng_radical: 'gwneud', ng_inf: 'gwneuden', fr_participle: 'fait', group: 'irregular' },
+    'vaen': { ng_conj: 'vaen', ng_radical: 'vaen', ng_inf: 'vaenen', fr_participle: 'vaen', group: 'irregular' }
+},
             nouns: {
                 'bête': { ng: 'gorval', gender_fr: 'f', gender_ng: 'm' },
                 'chat': { ng: 'mithel', gender_fr: 'm', gender_ng: 'f' },
@@ -707,6 +709,19 @@ function getArticleInfo(word) {
     
     return articles[word] || null;
             }
+        function makeNgParticiple(verbData) {
+    return verbData.ng_radical + 'at';
+}
+
+function findVerbFromParticiple(participle) {
+    // Chercher directement dans le dictionnaire
+    for (const [infinitive, verbData] of Object.entries(dict.verbs)) {
+        if (verbData.fr_participle === participle) {
+            return infinitive;
+        }
+    }
+    return null;
+}
         // TRADUCTIONS
         function translateFrToNg(text) {
             // Expressions composées (traitement partiel)
@@ -751,6 +766,23 @@ function getArticleInfo(word) {
                             i++; // Passer au mot suivant
                             continue;
                         }
+                        // FUTUR ANTÉRIEUR (aurai + participe → vaen + participe)
+if (['aurai', 'auras', 'aura', 'aurons', 'aurez', 'auront'].includes(word) && i + 1 < words.length) {
+    const nextWord = words[i + 1];
+    const participleVerb = findVerbFromParticiple(nextWord);
+    if (participleVerb) {
+        const vaenForm = conjugateNG(dict.verbs['vaen'], subject, 'présent');
+        const ngParticiple = makeNgParticiple(dict.verbs[participleVerb]);
+        result.push(`${vaenForm} ${ngParticiple}`);
+        analysis.push({
+            original: `${word} ${nextWord}`,
+            translation: `${vaenForm} ${ngParticiple}`,
+            type: 'futur antérieur'
+        });
+        i++; // Passer au mot suivant
+        continue;
+    }
+}
                     }
                     
                     // GESTION "DE + POSSESSIF" → "AEP"
